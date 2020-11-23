@@ -18,6 +18,7 @@ const uint8_t max_ctrl_outputs = 3;
 typedef struct struct_component {
 	component_type type;
 	float delay_ns;
+	resource_type resource_class;
 	uint8_t delay_cycle;
 	uint8_t cycle_started_asap;
 	uint8_t cycle_started_alap;
@@ -102,6 +103,55 @@ void Component_SchedulePathALAP(component* self, uint8_t cycle) {
 			Net_SchedulePathALAP(self->output_ports[output_idx].port_net, self->cycle_started_alap);
 		}
 	}
+}
+
+float Component_CalculateSelfForce(component* self, circuit* circ, uint8_t cycle) {
+	if(NULL == self || NULL == circ) return 0.0f;
+	uint8_t idx;
+	float dg, prob, sf, partial_sum;
+	prob = 1 / ((float) ((self->cycle_started_alap - self->cycle_started_asap) + 1));
+	sf = 0.0f;
+	if(self->cycle_started_alap || self->cycle_started_asap > cycle) return 0.0f;
+	for(idx = self->cycle_started_asap; idx <= self->cycle_started_alap; idx++) {
+		dg = Circuit_GetDistributionGraph(circ, self->resource_class, idx);
+		if(cycle == idx) {
+			partial_sum = dg * (1.0f - prob);
+		} else {
+			partial_sum = dg * (0.0f - prob);
+		}
+		sf += partial_sum;
+	}
+	return sf;
+}
+
+float Component_CalculateSuccessorForce(component* self, circuit* circ, uint8_t cycle) {
+	if(NULL == self || NULL == circ) return 0.0f;
+	uint8_t idx;
+	net* successor_net = NULL;
+	float successor_force = 0.0f;
+	for(idx = 0; idx < self->num_outputs; idx++) {
+		successor_net = self->output_ports[idx].port_net;
+		if(NULL != successor_net) {
+			successor_force += Net_CalculateSuccessorForce(successor_net, circ, cycle);
+		}
+	}
+	return successor_force;
+}
+
+uint8_t ComponentGetCycleALAP(component* self) {
+	uint8_t alap_time = 0;
+	if(NULL != self) {
+		alap_time = self->cycle_started_alap;
+	}
+	return alap_time;
+}
+
+uint8_t ComponentGetCycleASAP(component* self) {
+	uint8_t asap_time = 0;
+	if(NULL != self) {
+		asap_time = self->cycle_started_asap;
+	}
+	return asap_time;
 }
 
 uint8_t Component_AddInputPort(component* self, net* input, port_type type) {

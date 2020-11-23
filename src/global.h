@@ -76,6 +76,13 @@ typedef enum {
 	port_error
 } port_type;
 
+typedef enum {
+	resource_multiplier=0,
+	resource_divider,
+	resource_logical,
+	resource_error
+} resource_type;
+
 //Netlist Reader
 typedef enum {
 	VARIABLE,

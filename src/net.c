@@ -103,6 +103,26 @@ void Net_SchedulePathALAP(net* self, uint8_t cycle) {
 	}
 }
 
+float Net_CalculateSuccessorForce(net* self, circuit* circ, uint8_t cycle) {
+	if(NULL == self || NULL == circ) return 0.0f;
+	uint8_t idx, cycle_idx, alap_time, asap_time;
+	component* successor = NULL;
+	float successor_force = 0.0f;
+	for(idx = 0; idx < self->num_receivers; idx++) {
+		successor = self->receivers[idx];
+		if(NULL != successor) {
+			asap_time = ComponentGetCycleASAP(successor);
+			if(asap_time < cycle) { //If asap_time >= cycle then operation does not affect successor
+				alap_time = ComponentGetCycleALAP(successor);
+				for(cycle_idx = cycle; cycle_idx <= alap_time; cycle_idx++) {
+					successor_force += Component_CalculateSelfForce(successor, circ, cycle_idx);
+				}
+			}
+		}
+	}
+	return successor_force;
+}
+
 void Net_GetName(net* self, char* buffer) {
 	if(NULL != self) {
 		strcpy(buffer, self->name);
