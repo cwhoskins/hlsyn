@@ -80,6 +80,7 @@ typedef enum {
 	resource_multiplier=0,
 	resource_divider,
 	resource_logical,
+	resource_alu,
 	resource_error
 } resource_type;
 

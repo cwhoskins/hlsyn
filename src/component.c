@@ -154,6 +154,14 @@ uint8_t ComponentGetCycleASAP(component* self) {
 	return asap_time;
 }
 
+resource_type Component_GetResourceType(component* self) {
+	resource_type ret_value = resource_error;
+	if(NULL != self) {
+		ret_value = self->resource_class;
+	}
+	return ret_value;
+}
+
 uint8_t Component_AddInputPort(component* self, net* input, port_type type) {
 	uint8_t ret_value = SUCCESS;
 	if(NULL != self && NULL != input) {
@@ -336,9 +344,9 @@ net_sign Component_GetSign(component* self) {
 	return ret_value;
 }
 
-void Component_Destroy(component* self) {
-	if(NULL != self) {
-		free(self);
-		self = NULL;
+void Component_Destroy(component** self) {
+	if(NULL != *self) {
+		free((*self));
+		*self = NULL;
 	}
 }

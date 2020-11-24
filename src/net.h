@@ -28,7 +28,7 @@ float Net_CalculateSuccessorForce(net* self, circuit* circ, uint8_t cycle);
 
 void Net_AddReceiver(net* self, component* new_receiver);
 void Net_AddDriver(net* self, component* new_driver);
-void Net_Destroy(net* self);
+void Net_Destroy(net** self);
 
 void PrintNet(net* self);
 //void PrintNet(FILE* fp, net* self)

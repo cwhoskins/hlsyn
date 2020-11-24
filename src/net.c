@@ -179,11 +179,11 @@ void Net_AddReceiver(net* self, component* new_receiver) {
 	}
 }
 
-void Net_Destroy(net* self) {
-	if(NULL != self) {
-		free(self->receivers);
-		free(self);
-		self = NULL;
+void Net_Destroy(net** self) {
+	if(NULL != *self) {
+		free((*self)->receivers);
+		free((*self));
+		*self = NULL;
 	}
 }
 

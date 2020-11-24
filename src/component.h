@@ -23,6 +23,8 @@ void Component_SchedulePathALAP(component* self, uint8_t cycle);
 uint8_t ComponentGetCycleALAP(component* self);
 uint8_t ComponentGetCycleASAP(component* self);
 float Component_CalculateSelfForce(component* self, circuit* circ, uint8_t cycle);
+resource_type Component_GetResourceType(component* self);
+float Component_GetProbability(component* self, uint8_t cycle);
 
 uint8_t Component_AddInputPort(component* self, net* input, port_type type);
 uint8_t Component_AddOutputPort(component* self, net* output, port_type type);
@@ -37,6 +39,6 @@ port Component_GetInputPort(component* self, uint8_t idx);
 port Component_GetOutputPort(component* self, uint8_t idx);
 net_sign Component_GetSign(component* self);
 
-void Component_Destroy(component* self);
+void Component_Destroy(component** self);
 
 #endif /* COMPONENT_H_ */

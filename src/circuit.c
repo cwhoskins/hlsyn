@@ -24,11 +24,14 @@ typedef struct struct_circuit {
 	uint8_t num_components;
 
 	float critical_path_ns;
+	float* distribution_graphs[4];
+	uint8_t latency;
 } circuit;
 
 circuit* Circuit_Create() {
 	const uint8_t max_inputs = 32;
 	const uint8_t max_nets = 32;
+	uint8_t idx;
 	circuit* new_circuit = (circuit*) malloc(sizeof(circuit));
 	if(NULL != new_circuit) {
 		new_circuit->num_nets = 0;
@@ -39,6 +42,13 @@ circuit* Circuit_Create() {
 		new_circuit->netlist = (net**) malloc(max_nets * sizeof(net*));
 		new_circuit->output_nets = (net**) malloc(max_nets * sizeof(net*));
 		new_circuit->component_list = (component**) malloc(max_nets * sizeof(component*));
+		for(idx = 0; idx < 4; idx++) {
+			new_circuit->distribution_graphs[idx] = (float*) malloc(new_circuit->latency * sizeof(float));
+			if(NULL == new_circuit->distribution_graphs[idx]) {
+				Circuit_Destroy(new_circuit);
+			}
+		}
+
 	}
 	if(NULL == new_circuit->input_nets || NULL == new_circuit->netlist || NULL == new_circuit->output_nets || NULL == new_circuit->component_list) {
 		Circuit_Destroy(new_circuit);
@@ -174,22 +184,40 @@ void Circuit_ScheduleForceDirected(circuit* self) {
 
 }
 
-void Circuit_Destroy(circuit* self) {
-	uint8_t net_idx = 0;
-	if(NULL != self) {
-		while(net_idx < self->num_nets) {
-			Net_Destroy(self->netlist[net_idx]);
-			net_idx++;
+void Circuit_CalculateDistributionGraphs(circuit* self) {
+	uint8_t rsrc_idx, comp_idx, cycle_idx;
+	component* cur_comp = NULL;
+	for(rsrc_idx = 0; rsrc_idx < resource_error;rsrc_idx++) {
+		for(comp_idx=0;comp_idx < self->num_components;comp_idx++) {
+			cur_comp = self->component_list[comp_idx];
+			if(rsrc_idx == Component_GetResourceType(cur_comp)) {
+				for(cycle_idx=0;cycle_idx<self->latency;cycle_idx++) {
+					self->distribution_graphs[rsrc_idx] += Component_GetProbability(cur_comp, cycle_idx);
+				}
+			}
 		}
-		while(self->num_components > 0 ){
-			self->num_components--;
-			Component_Destroy(self->component_list[self->num_components]);
+	}
+}
+
+void Circuit_Destroy(circuit** self) {
+	uint8_t idx = 0;
+	if(NULL != *self) {
+		while(idx < (*self)->num_nets) {
+			Net_Destroy((*self)->netlist[idx]);
+			idx++;
 		}
-		free(self->output_nets);
-		free(self->input_nets);
-		free(self->netlist);
-		free(self->component_list);
-		free(self);
-		self = NULL;
+		while((*self)->num_components > 0 ){
+			(*self)->num_components--;
+			Component_Destroy((*self)->component_list[(*self)->num_components]);
+		}
+		for(idx = 0; idx < 4; idx++) {
+			free((*self)->distribution_graphs[idx]);
+		}
+		free((*self)->output_nets);
+		free((*self)->input_nets);
+		free((*self)->netlist);
+		free((*self)->component_list);
+		free((*self));
+		*self = NULL;
 	}
 }
