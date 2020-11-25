@@ -25,6 +25,7 @@ typedef struct struct_net {
 	float delay_ns;
 	uint8_t cycle_assigned_asap;
 	uint8_t cycle_assigned_alap;
+	uint8_t cycle_scheduled;
 } net;
 
 const uint8_t max_receivers = 32;
@@ -77,12 +78,12 @@ void Net_UpdatePathDelay(net* self, float path_delay_ns) {
 void Net_SchedulePathASAP(net* self, uint8_t cycle) {
 	uint8_t idx;
 	if(NULL != self) {
-		if(cycle > self->cycle_assigned) {
+		if(cycle > self->cycle_assigned_asap) {
 			char log_msg[256];
 			sprintf(log_msg,"MSG: Net %s assigned at cycle %d\n", self->name, cycle);
 			LogMessage(log_msg, MESSAGE_LEVEL);
 
-			self->cycle_assigned = cycle;
+			self->cycle_assigned_asap = cycle;
 			for(idx = 0; idx < self->num_receivers;idx++) {
 				Component_ScheduleASAP(self->receivers[idx], cycle);
 			}
@@ -92,12 +93,12 @@ void Net_SchedulePathASAP(net* self, uint8_t cycle) {
 
 void Net_SchedulePathALAP(net* self, uint8_t cycle) {
 	if(NULL != self) {
-		if(cycle < self->cycle_assigned) {
+		if(cycle < self->cycle_assigned_alap) {
 			char log_msg[256];
 			sprintf(log_msg,"MSG: Net %s assigned at cycle %d\n", self->name, cycle);
 			LogMessage(log_msg, MESSAGE_LEVEL);
 
-			self->cycle_assigned = cycle;
+			self->cycle_assigned_alap = cycle;
 			Component_ScheduleALAP(self->driver, cycle);
 		}
 	}
@@ -111,9 +112,9 @@ float Net_CalculateSuccessorForce(net* self, circuit* circ, uint8_t cycle) {
 	for(idx = 0; idx < self->num_receivers; idx++) {
 		successor = self->receivers[idx];
 		if(NULL != successor) {
-			asap_time = ComponentGetCycleASAP(successor);
+			asap_time = Component_GetTimeFrameStart(successor);
 			if(asap_time < cycle) { //If asap_time >= cycle then operation does not affect successor
-				alap_time = ComponentGetCycleALAP(successor);
+				alap_time = Component_GetTimeFrameEnd(successor);
 				for(cycle_idx = cycle; cycle_idx <= alap_time; cycle_idx++) {
 					successor_force += Component_CalculateSelfForce(successor, circ, cycle_idx);
 				}
@@ -121,6 +122,26 @@ float Net_CalculateSuccessorForce(net* self, circuit* circ, uint8_t cycle) {
 		}
 	}
 	return successor_force;
+}
+
+float Net_CalculatePredecessorForce(net* self, circuit* circ, uint8_t cycle) {
+	if(NULL == self || NULL == circ) return 0.0f;
+	uint8_t idx, cycle_idx, alap_time, asap_time;
+	uint8_t delay_cycle;
+	component* predecessor = NULL;
+	float predecessor_force = 0.0f;
+	predecessor = self->driver;
+	if(NULL != predecessor) {
+		delay_cycle = Component_GetDelayCycle(predecessor);
+		asap_time = Component_GetTimeFrameStart(predecessor);
+		alap_time = Component_GetTimeFrameEnd(predecessor);
+		if(alap_time < (cycle - delay_cycle)) {
+			for(cycle_idx = (cycle - delay_cycle); cycle_idx >= asap_time; cycle_idx--) {
+				predecessor_force += Component_CalculateSelfForce(predecessor, circ, cycle_idx);
+			}
+		}
+	}
+	return predecessor_force;
 }
 
 void Net_GetName(net* self, char* buffer) {

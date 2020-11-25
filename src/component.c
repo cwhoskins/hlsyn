@@ -6,6 +6,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "component.h"
 #include "logger.h"
 #include "net.h"
@@ -22,6 +23,9 @@ typedef struct struct_component {
 	uint8_t delay_cycle;
 	uint8_t cycle_started_asap;
 	uint8_t cycle_started_alap;
+	uint8_t time_frame[2];
+	uint8_t cycle_scheduled;
+	bool is_scheduled;
 	net_sign sign;
 	uint8_t width;
 
@@ -44,6 +48,25 @@ component* Component_Create(component_type type) {
 				new_component->sign = net_unsigned;
 				new_component->num_inputs = 0;
 				new_component->num_outputs = 0;
+				new_component->is_scheduled = FALSE;
+				new_component->cycle_scheduled = 0;
+				new_component->cycle_started_alap = 0;
+				new_component->cycle_started_asap = 0;
+				new_component->time_frame[0] = 0;
+				new_component->time_frame[1] = 0;
+				if(adder == type || subtractor == type) {
+					new_component->resource_class = resource_alu;
+					new_component->delay_cycle = ALU_CYCLE_DELAY;
+				} else if(divider == type || modulo == type) {
+					new_component->resource_class = resource_divider;
+					new_component->delay_cycle = DIVIDER_CYCLE_DELAY;
+				} else if(multiplier == type) {
+					new_component->resource_class = resource_multiplier;
+					new_component->delay_cycle = MULTIPLIER_CYCLE_DELAY;
+				} else if(mux2x1 == type || comparator == type || shift_left == type || shift_right == type) {
+					new_component->resource_class = resource_logical;
+					new_component->delay_cycle = LOGICAL_CYCLE_DELAY;
+				}
 			}
 		}
 	}
@@ -78,8 +101,8 @@ void Component_SchedulePathASAP(component* self, uint8_t cycle) {
 	char log_msg[128];
 	if(NULL != self) {
 		if(cycle > self->cycle_started_asap) {
-
 			self->cycle_started_asap = cycle;
+			self->time_frame[0] = self->cycle_started_asap;
 			cycle_completed = cycle + self->delay_cycle;
 			sprintf(log_msg, "MSG: Component schedules from cycle %d to %d\n", cycle, cycle_completed);
 			LogMessage(log_msg, MESSAGE_LEVEL);
@@ -96,6 +119,7 @@ void Component_SchedulePathALAP(component* self, uint8_t cycle) {
 	char log_msg[128];
 	if(NULL != self) {
 		self->cycle_started_alap = cycle - self->delay_cycle;
+		self->time_frame[1] = self->cycle_started_alap;
 		sprintf(log_msg, "MSG: Component schedules from cycle %d to %d\n", self->cycle_started_alap, cycle);
 		LogMessage(log_msg, MESSAGE_LEVEL);
 
@@ -109,10 +133,10 @@ float Component_CalculateSelfForce(component* self, circuit* circ, uint8_t cycle
 	if(NULL == self || NULL == circ) return 0.0f;
 	uint8_t idx;
 	float dg, prob, sf, partial_sum;
-	prob = 1 / ((float) ((self->cycle_started_alap - self->cycle_started_asap) + 1));
+	prob = 1 / ((float) ((self->time_frame[1] - self->time_frame[0]) + 1));
 	sf = 0.0f;
-	if(self->cycle_started_alap || self->cycle_started_asap > cycle) return 0.0f;
-	for(idx = self->cycle_started_asap; idx <= self->cycle_started_alap; idx++) {
+	if(cycle > self->time_frame[1] || self->time_frame[0] < cycle) return 0.0f;
+	for(idx = self->time_frame[0]; idx <= self->time_frame[1]; idx++) {
 		dg = Circuit_GetDistributionGraph(circ, self->resource_class, idx);
 		if(cycle == idx) {
 			partial_sum = dg * (1.0f - prob);
@@ -128,30 +152,54 @@ float Component_CalculateSuccessorForce(component* self, circuit* circ, uint8_t 
 	if(NULL == self || NULL == circ) return 0.0f;
 	uint8_t idx;
 	net* successor_net = NULL;
+	uint8_t net_cycle = cycle + self->delay_cycle;
 	float successor_force = 0.0f;
 	for(idx = 0; idx < self->num_outputs; idx++) {
 		successor_net = self->output_ports[idx].port_net;
 		if(NULL != successor_net) {
-			successor_force += Net_CalculateSuccessorForce(successor_net, circ, cycle);
+			successor_force += Net_CalculateSuccessorForce(successor_net, circ, net_cycle);
 		}
 	}
 	return successor_force;
 }
 
-uint8_t ComponentGetCycleALAP(component* self) {
-	uint8_t alap_time = 0;
-	if(NULL != self) {
-		alap_time = self->cycle_started_alap;
+float Component_CalculatePredecessorForce(component* self, circuit* circ, uint8_t cycle) {
+	if(NULL == self || NULL == circ) return 0.0f;
+	uint8_t idx;
+	net* predecessor_net = NULL;
+	uint8_t net_cycle = cycle + self->delay_cycle;
+	float predecessor_force = 0.0f;
+	for(idx = 0; idx < self->num_inputs; idx++) {
+		predecessor_net = self->input_ports[idx].port_net;
+		if(NULL != predecessor_net) {
+			predecessor_force += Net_CalculatePredecessorForce(predecessor_net, circ, net_cycle);
+		}
 	}
-	return alap_time;
+	return predecessor_force;
 }
 
-uint8_t ComponentGetCycleASAP(component* self) {
-	uint8_t asap_time = 0;
+uint8_t Component_GetTimeFrameEnd(component* self) {
+	uint8_t time = 0;
 	if(NULL != self) {
-		asap_time = self->cycle_started_asap;
+		time = self->time_frame[1];
 	}
-	return asap_time;
+	return time;
+}
+
+uint8_t Component_GetTimeFrameStart(component* self) {
+	uint8_t time = 0;
+	if(NULL != self) {
+		time = self->time_frame[0];
+	}
+	return time;
+}
+
+uint8_t Component_GetDelayCycle(component* self) {
+	uint8_t ret_value = 0;
+	if(NULL != self) {
+		ret_value = self->delay_cycle;
+	}
+	return ret_value;
 }
 
 resource_type Component_GetResourceType(component* self) {

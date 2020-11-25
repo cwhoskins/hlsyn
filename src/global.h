@@ -22,6 +22,11 @@
 #define FALSE 0
 #define TRUE 1
 
+#define ALU_CYCLE_DELAY 1
+#define DIVIDER_CYCLE_DELAY 3
+#define MULTIPLIER_CYCLE_DELAY 2
+#define LOGICAL_CYCLE_DELAY 1
+
 #define DEBUG_MODE 1
 
 //Net

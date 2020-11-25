@@ -20,11 +20,14 @@ void Component_UpdateDelay(component* self);
 
 void Component_SchedulePathASAP(component* self, uint8_t cycle);
 void Component_SchedulePathALAP(component* self, uint8_t cycle);
-uint8_t ComponentGetCycleALAP(component* self);
-uint8_t ComponentGetCycleASAP(component* self);
+uint8_t Component_GetTimeFrameEnd(component* self);
+uint8_t Component_GetTimeFrameStart(component* self);
 float Component_CalculateSelfForce(component* self, circuit* circ, uint8_t cycle);
 resource_type Component_GetResourceType(component* self);
 float Component_GetProbability(component* self, uint8_t cycle);
+float Component_CalculatePredecessorForce(component* self, circuit* circ, uint8_t cycle);
+float Component_CalculateSuccessorForce(component* self, circuit* circ, uint8_t cycle);
+uint8_t Component_GetDelayCycle(component* self);
 
 uint8_t Component_AddInputPort(component* self, net* input, port_type type);
 uint8_t Component_AddOutputPort(component* self, net* output, port_type type);
