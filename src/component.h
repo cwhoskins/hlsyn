@@ -20,6 +20,7 @@ void Component_UpdateDelay(component* self);
 
 void Component_SchedulePathASAP(component* self, uint8_t cycle);
 void Component_SchedulePathALAP(component* self, uint8_t cycle);
+void Component_SchedulePathFDS(component* self, uint8_t cycle);
 uint8_t Component_GetTimeFrameEnd(component* self);
 uint8_t Component_GetTimeFrameStart(component* self);
 float Component_CalculateSelfForce(component* self, circuit* circ, uint8_t cycle);

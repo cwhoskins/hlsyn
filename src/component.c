@@ -130,6 +130,27 @@ void Component_SchedulePathALAP(component* self, uint8_t cycle) {
 	}
 }
 
+void Component_SchedulePathFDS(component* self, uint8_t cycle) {
+	uint8_t idx;
+	if(NULL != self) {
+		if(cycle > self->time_frame[1] || cycle < self->time_frame[0]) {
+			LogMessage("ERROR: Component scheduled outside of time frame\n", ERROR_LEVEL);
+		} else {
+			self->time_frame[0] = cycle;
+			self->time_frame[1] = cycle;
+			self->cycle_scheduled = cycle;
+			self->is_scheduled = TRUE;
+			for(idx = 0; idx < self->num_inputs;idx++) { //Update time frames of predecessors
+				Net_UpdateTimeFrameEnd(self->input_ports[idx].port_net, cycle);
+			}
+			for(idx = 0; idx < self->num_outputs; idx++) { //Update time frames of successors
+				Net_UpdateTimeFrameStart(self->output_ports[idx].port_net, (self->delay_cycle + cycle));
+			}
+		}
+	}
+
+}
+
 float Component_CalculateSelfForce(component* self, circuit* circ, uint8_t cycle) {
 	if(NULL == self || NULL == circ) return 0.0f;
 	uint8_t idx;
@@ -187,7 +208,7 @@ float Component_CalculatePredecessorForce(component* self, circuit* circ, uint8_
 
 void Component_UpdateTimeFrameStart(component* self, uint8_t cycle) {
 	if(NULL != self) {
-		if(cycle > self->time_frame[0]) {
+		if(FALSE == self->is_scheduled && cycle > self->time_frame[0]) {
 			self->time_frame[0] = cycle;
 			uint8_t idx;
 			for(idx = 0; idx < self->num_outputs; idx++) {
@@ -201,7 +222,7 @@ void Component_UpdateTimeFrameEnd(component* self, uint8_t cycle) {
 	uint8_t new_cycle = cycle - self->delay_cycle;
 	uint8_t idx;
 	if(NULL != self) {
-		if(new_cycle < self->time_frame[1]) {
+		if(FALSE == self->is_scheduled && new_cycle < self->time_frame[1]) {
 			self->time_frame[1] = new_cycle;
 			for(idx = 0; idx < self->num_inputs; idx++) {
 				Net_UpdateTimeFrameEnd(self->input_ports[idx].port_net, new_cycle);

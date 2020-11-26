@@ -9,6 +9,7 @@
 #include "net.h"
 #include "component.h"
 #include "logger.h"
+#include "resource.h"
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -45,6 +46,7 @@ circuit* Circuit_Create() {
 		new_circuit->netlist = (net**) malloc(max_nets * sizeof(net*));
 		new_circuit->output_nets = (net**) malloc(max_nets * sizeof(net*));
 		new_circuit->component_list = (component**) malloc(max_nets * sizeof(component*));
+		new_circuit->resource_list = (resource**) malloc(max_nets * sizeof(resource*));
 		for(idx = 0; idx < 4; idx++) {
 			new_circuit->distribution_graphs[idx] = (float*) malloc(new_circuit->latency * sizeof(float));
 			if(NULL == new_circuit->distribution_graphs[idx]) {
@@ -190,7 +192,7 @@ void Circuit_ScheduleForceDirected(circuit* self) {
 	float min_force, self_force, suc_force, pred_force, total_force;
 	Circuit_ScheduleASAP(self);
 	Circuit_ScheduleALAP(self);
-	for(s_idx = 0; s_idx < self->num_components; s_idx++) {
+	for(s_idx = 0; s_idx < self->num_components; s_idx++) { //Cycle through every operation so that all get scheduled
 		Circuit_CalculateDistributionGraphs(self);
 		for(comp_idx = 0; comp_idx < self->num_components; comp_idx++) {
 			if(FALSE == Component_GetIsScheduled(self->component_list[comp_idx])) { //Skip component if it's already been scheduled
@@ -215,27 +217,31 @@ void Circuit_ScheduleForceDirected(circuit* self) {
 void Circuit_ScheduleOperation(circuit* self, component* operation, uint8_t cycle) {
 	if(NULL == self || NULL == operation) return;
 	if(cycle < 1 || cycle > self->latency) {
-		LogMessage("ERROR: Invalid Scheduling Cycle\n", ERROR_LEVEL);
+		LogMessage("ERROR(Circuit_ScheduleOperation): Invalid Scheduling Cycle\n", ERROR_LEVEL);
 		return;
 	}
 	resource_type op_type = Component_GetResourceType(operation);
+	if(resource_error == op_type) {
+		LogMessage("Error(Circuit_ScheduleOperation): Unknown resource type\n", ERROR_LEVEL);
+		return;
+	}
 	uint8_t r_idx, resource_available;
 	resource_available = FALSE;
 
 	for(r_idx = 0; r_idx < self->num_resource; r_idx++) {
-		if(TRUE == Resource_CheckAvailability(self->resource_list[r_idx], cycle)) { //Resource is available
+		if(op_type == Resource_GetType(self->resource_list[r_idx]) && TRUE == Resource_CheckAvailability(self->resource_list[r_idx], cycle)) { //Resource of same type is available
 			Resource_ScheduleOperation(self->resource_list[r_idx], operation, cycle);
 			resource_available = TRUE;
 		}
 	}
 	if(FALSE == resource_available) { //Must create new resource to schedule operation
-		resource* new_resource = Resource_Create(Component_GetResourceType(operation));
+		resource* new_resource = Resource_Create(Component_GetResourceType(operation), self->latency);
 		Circuit_AddResource(self, new_resource);
 		Resource_ScheduleOperation(new_resource, operation, cycle);
 	}
 }
 
-Circuit_AddResource(circuit* self, resource* new_resource) {
+void Circuit_AddResource(circuit* self, resource* new_resource) {
 	if(NULL != new_resource && NULL != self) {
 		self->resource_list[self->num_resource] = new_resource;
 		self->num_resource++;
@@ -279,6 +285,7 @@ void Circuit_Destroy(circuit** self) {
 		free((*self)->input_nets);
 		free((*self)->netlist);
 		free((*self)->component_list);
+		free((*self)->resource_list);
 		free((*self));
 		*self = NULL;
 	}
