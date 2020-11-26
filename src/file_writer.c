@@ -392,7 +392,7 @@ void TestComponentDeclaration() {
 		}
 		DeclareComponent(uut, comp_line, comp_idx);
 		printf(comp_line);
-		Component_Destroy(uut);
+		Component_Destroy(&uut);
 		comp_idx++;
 	}
 }

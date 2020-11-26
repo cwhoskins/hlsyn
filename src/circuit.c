@@ -45,13 +45,13 @@ circuit* Circuit_Create() {
 		for(idx = 0; idx < 4; idx++) {
 			new_circuit->distribution_graphs[idx] = (float*) malloc(new_circuit->latency * sizeof(float));
 			if(NULL == new_circuit->distribution_graphs[idx]) {
-				Circuit_Destroy(new_circuit);
+				Circuit_Destroy(&new_circuit);
 			}
 		}
 
 	}
 	if(NULL == new_circuit->input_nets || NULL == new_circuit->netlist || NULL == new_circuit->output_nets || NULL == new_circuit->component_list) {
-		Circuit_Destroy(new_circuit);
+		Circuit_Destroy(&new_circuit);
 	}
 	return new_circuit;
 }
@@ -192,23 +192,27 @@ void Circuit_CalculateDistributionGraphs(circuit* self) {
 			cur_comp = self->component_list[comp_idx];
 			if(rsrc_idx == Component_GetResourceType(cur_comp)) {
 				for(cycle_idx=0;cycle_idx<self->latency;cycle_idx++) {
-					self->distribution_graphs[rsrc_idx] += Component_GetProbability(cur_comp, cycle_idx);
+					self->distribution_graphs[rsrc_idx][cycle_idx] += Component_GetProbability(cur_comp, cycle_idx);
 				}
 			}
 		}
 	}
 }
 
+float Circuit_GetDistributionGraph(circuit* self, resource_type type, uint8_t cycle) {
+	return 0.0f;
+}
+
 void Circuit_Destroy(circuit** self) {
 	uint8_t idx = 0;
 	if(NULL != *self) {
 		while(idx < (*self)->num_nets) {
-			Net_Destroy((*self)->netlist[idx]);
+			Net_Destroy(&((*self)->netlist[idx]));
 			idx++;
 		}
 		while((*self)->num_components > 0 ){
 			(*self)->num_components--;
-			Component_Destroy((*self)->component_list[(*self)->num_components]);
+			Component_Destroy(&((*self)->component_list[(*self)->num_components]));
 		}
 		for(idx = 0; idx < 4; idx++) {
 			free((*self)->distribution_graphs[idx]);

@@ -21,7 +21,11 @@ void Circuit_AddNet(circuit* self, net* new_net);
 void Circuit_AddComponent(circuit* self, component* new_component);
 void Circuit_CalculateDelay(circuit* self);
 float Circuit_GetCriticalPath(circuit* self);
-void Circuit_Destroy(circuit* self);
+void Circuit_Destroy(circuit** self);
 void PrintCircuit(circuit* self);
+
+float Circuit_GetDistributionGraph(circuit* self, resource_type type, uint8_t cycle);
+void Circuit_CalculateDistributionGraphs(circuit* self);
+void Circuit_ScheduleForceDirected(circuit* self);
 
 #endif /* CIRCUIT_H_ */

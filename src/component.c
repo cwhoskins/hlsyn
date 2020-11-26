@@ -10,6 +10,7 @@
 #include "component.h"
 #include "logger.h"
 #include "net.h"
+#include "circuit.h"
 
 const uint8_t max_dp_inputs = 2;
 const uint8_t max_ctrl_inputs = 1;
@@ -178,6 +179,31 @@ float Component_CalculatePredecessorForce(component* self, circuit* circ, uint8_
 	return predecessor_force;
 }
 
+void Component_UpdateTimeFrameStart(component* self, uint8_t cycle) {
+	if(NULL != self) {
+		if(cycle > self->time_frame[0]) {
+			self->time_frame[0] = cycle;
+			uint8_t idx;
+			for(idx = 0; idx < self->num_outputs; idx++) {
+				Net_UpdateTimeFrameStart(self->output_ports[idx].port_net, (cycle+self->delay_cycle));
+			}
+		}
+	}
+}
+
+void Component_UpdateTimeFrameEnd(component* self, uint8_t cycle) {
+	uint8_t new_cycle = cycle - self->delay_cycle;
+	uint8_t idx;
+	if(NULL != self) {
+		if(new_cycle < self->time_frame[1]) {
+			self->time_frame[1] = new_cycle;
+			for(idx = 0; idx < self->num_inputs; idx++) {
+				Net_UpdateTimeFrameEnd(self->input_ports[idx].port_net, new_cycle);
+			}
+		}
+	}
+}
+
 uint8_t Component_GetTimeFrameEnd(component* self) {
 	uint8_t time = 0;
 	if(NULL != self) {
@@ -206,6 +232,14 @@ resource_type Component_GetResourceType(component* self) {
 	resource_type ret_value = resource_error;
 	if(NULL != self) {
 		ret_value = self->resource_class;
+	}
+	return ret_value;
+}
+
+float Component_GetProbability(component* self, uint8_t cycle) {
+	float ret_value = 0.0f;
+	if(NULL != self) {
+		ret_value = 1 / ((float) ((self->time_frame[1] - self->time_frame[0]) + 1));
 	}
 	return ret_value;
 }

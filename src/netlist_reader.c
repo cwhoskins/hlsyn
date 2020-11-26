@@ -695,7 +695,7 @@ void TestDeclarations() {
 	    	printf("Error: File #%d\r\n", file_idx);
 	    }
 	    PrintCircuit(test_circuit);
-	    Circuit_Destroy(test_circuit);
+	    Circuit_Destroy(&test_circuit);
 	}
 
 }

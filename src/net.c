@@ -43,7 +43,7 @@ net* Net_Create(char* name, net_type type, net_sign sign, uint8_t width) {
 		new_net->num_receivers = 0;
 		new_net->receivers = (component**) malloc(max_receivers * sizeof(component*));
 		if(NULL == new_net->receivers) {
-			Net_Destroy(new_net);
+			Net_Destroy(&new_net);
 		}
 	}
 	return new_net;
@@ -85,7 +85,7 @@ void Net_SchedulePathASAP(net* self, uint8_t cycle) {
 
 			self->cycle_assigned_asap = cycle;
 			for(idx = 0; idx < self->num_receivers;idx++) {
-				Component_ScheduleASAP(self->receivers[idx], cycle);
+				Component_SchedulePathASAP(self->receivers[idx], cycle);
 			}
 		}
 	}
@@ -99,7 +99,7 @@ void Net_SchedulePathALAP(net* self, uint8_t cycle) {
 			LogMessage(log_msg, MESSAGE_LEVEL);
 
 			self->cycle_assigned_alap = cycle;
-			Component_ScheduleALAP(self->driver, cycle);
+			Component_SchedulePathALAP(self->driver, cycle);
 		}
 	}
 }
@@ -126,7 +126,7 @@ float Net_CalculateSuccessorForce(net* self, circuit* circ, uint8_t cycle) {
 
 float Net_CalculatePredecessorForce(net* self, circuit* circ, uint8_t cycle) {
 	if(NULL == self || NULL == circ) return 0.0f;
-	uint8_t idx, cycle_idx, alap_time, asap_time;
+	uint8_t cycle_idx, alap_time, asap_time;
 	uint8_t delay_cycle;
 	component* predecessor = NULL;
 	float predecessor_force = 0.0f;
@@ -142,6 +142,25 @@ float Net_CalculatePredecessorForce(net* self, circuit* circ, uint8_t cycle) {
 		}
 	}
 	return predecessor_force;
+}
+
+void Net_UpdateTimeFrameStart(net* self, uint8_t cycle) {
+	uint8_t idx;
+	if(NULL != self) {
+		for(idx = 0; idx < self->num_receivers; idx++) {
+			if(NULL != self->receivers[idx]) {
+				Component_UpdateTimeFrameStart(self->receivers[idx], cycle);
+			}
+		}
+	}
+}
+
+void Net_UpdateTimeFrameEnd(net* self, uint8_t cycle) {
+	if(NULL != self) {
+		if(NULL != self->driver) {
+			Component_UpdateTimeFrameEnd(self->driver, cycle);
+		}
+	}
 }
 
 void Net_GetName(net* self, char* buffer) {
@@ -217,7 +236,7 @@ void TestPrintNet() {
 	net* test = Net_Create(name, type, sign, width);
 	PrintNet(test);
 
-	Net_Destroy(test);
+	Net_Destroy(&test);
 	return;
 
 }
