@@ -115,19 +115,29 @@ void Component_SchedulePathASAP(component* self, uint8_t cycle) {
 	}
 }
 
-void Component_SchedulePathALAP(component* self, uint8_t cycle) {
+uint8_t Component_SchedulePathALAP(component* self, uint8_t cycle) {
+	uint8_t ret_value = FAILURE;
 	uint8_t input_idx;
 	char log_msg[128];
-	if(NULL != self) {
-		self->cycle_started_alap = cycle - self->delay_cycle;
-		self->time_frame[1] = self->cycle_started_alap;
-		sprintf(log_msg, "MSG: Component scheduled from cycle %d to %d\n", self->cycle_started_alap, cycle);
-		LogMessage(log_msg, MESSAGE_LEVEL);
 
-		for(input_idx = 0; input_idx < self->num_outputs; input_idx++) {
-			Net_SchedulePathALAP(self->input_ports[input_idx].port_net, self->cycle_started_alap);
+	if(NULL != self) {
+		if(cycle <= self->delay_cycle) {
+			LogMessage("Error(Component_SchedulePathALAP): Circuit cannot meet latency\n", CIRCUIT_ERROR_LEVEL);
+		} else {
+			self->cycle_started_alap = cycle - self->delay_cycle;
+			self->time_frame[1] = self->cycle_started_alap;
+			sprintf(log_msg, "MSG(Component_SchedulePathALAP): Component scheduled from cycle %d to %d\n", self->cycle_started_alap, cycle);
+			LogMessage(log_msg, MESSAGE_LEVEL);
+
+			for(input_idx = 0; input_idx < self->num_outputs; input_idx++) {
+				ret_value = Net_SchedulePathALAP(self->input_ports[input_idx].port_net, self->cycle_started_alap);
+				if(FAILURE == ret_value) {
+					break;
+				}
+			}
 		}
 	}
+	return ret_value;
 }
 
 void Component_SchedulePathFDS(component* self, uint8_t cycle) {

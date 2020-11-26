@@ -171,18 +171,21 @@ void PrintCircuit(circuit* self) {
 void Circuit_ScheduleASAP(circuit* self) {
 	uint8_t idx;
 
-	//Reset netlist for new scheduling
-	for(idx = 0; idx < self->num_nets;idx++) {
-		Net_ResetDelay(self->netlist[idx]);
-	}
-
 	for(idx = 0;idx < self->num_inputs; idx++) {
 		Net_SchedulePathASAP(self->input_nets[idx], 1);
 	}
 }
 
-void Circuit_ScheduleALAP(circuit* self) {
-
+uint8_t Circuit_ScheduleALAP(circuit* self) {
+	uint8_t idx;
+	uint8_t ret_value = SUCCESS;
+	for(idx = 0;idx < self->num_outputs; idx++) {
+		ret_value = Net_SchedulePathALAP(self->output_nets[idx], self->latency);
+		if(FAILURE == ret_value) {
+			break;
+		}
+	}
+	return ret_value;
 }
 
 void Circuit_ScheduleForceDirected(circuit* self) {

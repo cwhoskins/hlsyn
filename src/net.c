@@ -91,7 +91,8 @@ void Net_SchedulePathASAP(net* self, uint8_t cycle) {
 	}
 }
 
-void Net_SchedulePathALAP(net* self, uint8_t cycle) {
+uint8_t Net_SchedulePathALAP(net* self, uint8_t cycle) {
+	uint8_t ret_value = SUCCESS;
 	if(NULL != self) {
 		if(cycle < self->cycle_assigned_alap) {
 			char log_msg[256];
@@ -99,9 +100,12 @@ void Net_SchedulePathALAP(net* self, uint8_t cycle) {
 			LogMessage(log_msg, MESSAGE_LEVEL);
 
 			self->cycle_assigned_alap = cycle;
-			Component_SchedulePathALAP(self->driver, cycle);
+			ret_value = Component_SchedulePathALAP(self->driver, cycle);
 		}
+	} else {
+		ret_value = FAILURE;
 	}
+	return ret_value;
 }
 
 float Net_CalculateSuccessorForce(net* self, circuit* circ, uint8_t cycle) {
