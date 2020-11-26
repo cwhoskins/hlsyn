@@ -116,7 +116,7 @@ void Component_SchedulePathASAP(component* self, uint8_t cycle) {
 }
 
 void Component_SchedulePathALAP(component* self, uint8_t cycle) {
-	uint8_t output_idx;
+	uint8_t input_idx;
 	char log_msg[128];
 	if(NULL != self) {
 		self->cycle_started_alap = cycle - self->delay_cycle;
@@ -124,8 +124,8 @@ void Component_SchedulePathALAP(component* self, uint8_t cycle) {
 		sprintf(log_msg, "MSG: Component scheduled from cycle %d to %d\n", self->cycle_started_alap, cycle);
 		LogMessage(log_msg, MESSAGE_LEVEL);
 
-		for(output_idx = 0; output_idx < self->num_outputs; output_idx++) {
-			Net_SchedulePathALAP(self->output_ports[output_idx].port_net, self->cycle_started_alap);
+		for(input_idx = 0; input_idx < self->num_outputs; input_idx++) {
+			Net_SchedulePathALAP(self->input_ports[input_idx].port_net, self->cycle_started_alap);
 		}
 	}
 }
@@ -155,7 +155,7 @@ float Component_CalculateSelfForce(component* self, circuit* circ, uint8_t cycle
 	if(NULL == self || NULL == circ) return 0.0f;
 	uint8_t idx;
 	float dg, prob, sf, partial_sum;
-	prob = 1 / ((float) ((self->time_frame[1] - self->time_frame[0]) + 1));
+	prob = 1.0f / ((float) ((self->time_frame[1] - self->time_frame[0]) + 1.0f));
 	sf = 0.0f;
 	if(cycle > self->time_frame[1] || self->time_frame[0] < cycle) return 0.0f;
 	for(idx = self->time_frame[0]; idx <= self->time_frame[1]; idx++) {

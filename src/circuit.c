@@ -252,6 +252,9 @@ void Circuit_CalculateDistributionGraphs(circuit* self) {
 	uint8_t rsrc_idx, comp_idx, cycle_idx;
 	component* cur_comp = NULL;
 	for(rsrc_idx = 0; rsrc_idx < resource_error;rsrc_idx++) {
+		for(cycle_idx=0;cycle_idx<self->latency;cycle_idx++) { //Zero out dg before calculating
+			self->distribution_graphs[rsrc_idx][cycle_idx] = 0;
+		}
 		for(comp_idx=0;comp_idx < self->num_components;comp_idx++) {
 			cur_comp = self->component_list[comp_idx];
 			if(rsrc_idx == Component_GetResourceType(cur_comp)) {
@@ -264,7 +267,14 @@ void Circuit_CalculateDistributionGraphs(circuit* self) {
 }
 
 float Circuit_GetDistributionGraph(circuit* self, resource_type type, uint8_t cycle) {
-	return 0.0f;
+	float ret_value = 0.0f;
+	uint8_t cycle_idx = cycle-1;
+	if(NULL != self && cycle > 0 && cycle <= self->latency) {
+		ret_value = self->distribution_graphs[type][cycle_idx];
+	} else {
+		LogMessage("Error(Circuit_GetDistributionGraph): Invalid Input", ERROR_LEVEL);
+	}
+	return ret_value;
 }
 
 void Circuit_Destroy(circuit** self) {
