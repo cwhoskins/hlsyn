@@ -116,7 +116,7 @@ float Net_CalculateSuccessorForce(net* self, circuit* circ, uint8_t cycle) {
 			if(asap_time < cycle) { //If asap_time >= cycle then operation does not affect successor
 				alap_time = Component_GetTimeFrameEnd(successor);
 				for(cycle_idx = cycle; cycle_idx <= alap_time; cycle_idx++) {
-					successor_force += Component_CalculateSelfForce(successor, circ, cycle_idx);
+					successor_force += Component_CalculateSuccessorForce(successor, circ, cycle_idx);
 				}
 			}
 		}
@@ -137,7 +137,7 @@ float Net_CalculatePredecessorForce(net* self, circuit* circ, uint8_t cycle) {
 		alap_time = Component_GetTimeFrameEnd(predecessor);
 		if(alap_time < (cycle - delay_cycle)) {
 			for(cycle_idx = (cycle - delay_cycle); cycle_idx >= asap_time; cycle_idx--) {
-				predecessor_force += Component_CalculateSelfForce(predecessor, circ, cycle_idx);
+				predecessor_force += Component_CalculatePredecessorForce(predecessor, circ, cycle_idx);
 			}
 		}
 	}

@@ -105,7 +105,7 @@ void Component_SchedulePathASAP(component* self, uint8_t cycle) {
 			self->cycle_started_asap = cycle;
 			self->time_frame[0] = self->cycle_started_asap;
 			cycle_completed = cycle + self->delay_cycle;
-			sprintf(log_msg, "MSG: Component schedules from cycle %d to %d\n", cycle, cycle_completed);
+			sprintf(log_msg, "MSG: Component scheduled from cycle %d to %d\n", cycle, cycle_completed);
 			LogMessage(log_msg, MESSAGE_LEVEL);
 
 			for(output_idx = 0; output_idx < self->num_outputs; output_idx++) {
@@ -121,7 +121,7 @@ void Component_SchedulePathALAP(component* self, uint8_t cycle) {
 	if(NULL != self) {
 		self->cycle_started_alap = cycle - self->delay_cycle;
 		self->time_frame[1] = self->cycle_started_alap;
-		sprintf(log_msg, "MSG: Component schedules from cycle %d to %d\n", self->cycle_started_alap, cycle);
+		sprintf(log_msg, "MSG: Component scheduled from cycle %d to %d\n", self->cycle_started_alap, cycle);
 		LogMessage(log_msg, MESSAGE_LEVEL);
 
 		for(output_idx = 0; output_idx < self->num_outputs; output_idx++) {
@@ -155,10 +155,13 @@ float Component_CalculateSuccessorForce(component* self, circuit* circ, uint8_t 
 	net* successor_net = NULL;
 	uint8_t net_cycle = cycle + self->delay_cycle;
 	float successor_force = 0.0f;
-	for(idx = 0; idx < self->num_outputs; idx++) {
-		successor_net = self->output_ports[idx].port_net;
-		if(NULL != successor_net) {
-			successor_force += Net_CalculateSuccessorForce(successor_net, circ, net_cycle);
+	if(cycle > self->cycle_started_asap) {
+		successor_force = Component_CalculateSelfForce(self, circ, cycle);
+		for(idx = 0; idx < self->num_outputs; idx++) {
+			successor_net = self->output_ports[idx].port_net;
+			if(NULL != successor_net) {
+				successor_force += Net_CalculateSuccessorForce(successor_net, circ, net_cycle);
+			}
 		}
 	}
 	return successor_force;
@@ -170,10 +173,13 @@ float Component_CalculatePredecessorForce(component* self, circuit* circ, uint8_
 	net* predecessor_net = NULL;
 	uint8_t net_cycle = cycle + self->delay_cycle;
 	float predecessor_force = 0.0f;
-	for(idx = 0; idx < self->num_inputs; idx++) {
-		predecessor_net = self->input_ports[idx].port_net;
-		if(NULL != predecessor_net) {
-			predecessor_force += Net_CalculatePredecessorForce(predecessor_net, circ, net_cycle);
+	if(cycle < self->cycle_started_alap) {
+		predecessor_force = Component_CalculateSelfForce(self, circ, cycle);
+		for(idx = 0; idx < self->num_inputs; idx++) {
+			predecessor_net = self->input_ports[idx].port_net;
+			if(NULL != predecessor_net) {
+				predecessor_force += Net_CalculatePredecessorForce(predecessor_net, circ, net_cycle);
+			}
 		}
 	}
 	return predecessor_force;
