@@ -8,6 +8,7 @@
 #include "circuit.h"
 #include "net.h"
 #include "component.h"
+#include "logger.h"
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -26,6 +27,8 @@ typedef struct struct_circuit {
 	float critical_path_ns;
 	float* distribution_graphs[4];
 	uint8_t latency;
+	resource** resource_list;
+	uint8_t num_resource;
 } circuit;
 
 circuit* Circuit_Create() {
@@ -181,7 +184,62 @@ void Circuit_ScheduleALAP(circuit* self) {
 }
 
 void Circuit_ScheduleForceDirected(circuit* self) {
+	if(NULL == self) return;
+	uint8_t s_idx, cycle_idx, comp_idx, min_cycle;
+	component* min_component;
+	float min_force, self_force, suc_force, pred_force, total_force;
+	Circuit_ScheduleASAP(self);
+	Circuit_ScheduleALAP(self);
+	for(s_idx = 0; s_idx < self->num_components; s_idx++) {
+		Circuit_CalculateDistributionGraphs(self);
+		for(comp_idx = 0; comp_idx < self->num_components; comp_idx++) {
+			if(FALSE == Component_GetIsScheduled(self->component_list[comp_idx])) { //Skip component if it's already been scheduled
+				for(cycle_idx = 1; cycle_idx <= self->latency; cycle_idx++) {
+					self_force = Component_CalculateSelfForce(self->component_list[comp_idx], self, cycle_idx);
+					suc_force = Component_CalculateSuccessorForce(self->component_list[comp_idx], self, cycle_idx);
+					pred_force = Component_CalculatePredecessorForce(self->component_list[comp_idx], self, cycle_idx);
+					total_force = self_force + suc_force + pred_force;
+					if((1 == cycle_idx && 0 == comp_idx) || (total_force < min_force)) {
+						min_force = total_force;
+						min_component = self->component_list[comp_idx];
+						min_cycle = cycle_idx;
+					}
+				}
+			}
+		}
+		Circuit_ScheduleOperation(self, min_component, min_cycle);
+	}
 
+}
+
+void Circuit_ScheduleOperation(circuit* self, component* operation, uint8_t cycle) {
+	if(NULL == self || NULL == operation) return;
+	if(cycle < 1 || cycle > self->latency) {
+		LogMessage("ERROR: Invalid Scheduling Cycle\n", ERROR_LEVEL);
+		return;
+	}
+	resource_type op_type = Component_GetResourceType(operation);
+	uint8_t r_idx, resource_available;
+	resource_available = FALSE;
+
+	for(r_idx = 0; r_idx < self->num_resource; r_idx++) {
+		if(TRUE == Resource_CheckAvailability(self->resource_list[r_idx], cycle)) { //Resource is available
+			Resource_ScheduleOperation(self->resource_list[r_idx], operation, cycle);
+			resource_available = TRUE;
+		}
+	}
+	if(FALSE == resource_available) { //Must create new resource to schedule operation
+		resource* new_resource = Resource_Create(Component_GetResourceType(operation));
+		Circuit_AddResource(self, new_resource);
+		Resource_ScheduleOperation(new_resource, operation, cycle);
+	}
+}
+
+Circuit_AddResource(circuit* self, resource* new_resource) {
+	if(NULL != new_resource && NULL != self) {
+		self->resource_list[self->num_resource] = new_resource;
+		self->num_resource++;
+	}
 }
 
 void Circuit_CalculateDistributionGraphs(circuit* self) {

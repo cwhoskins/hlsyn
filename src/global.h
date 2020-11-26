@@ -123,4 +123,7 @@ extern const float mod_delays[6];
 extern const float inc_delays[6];
 extern const float dec_delays[6];
 
+//Resource
+typedef struct struct_resource resource;
+
 #endif /* GLOBAL_H_ */

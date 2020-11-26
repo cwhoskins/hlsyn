@@ -27,5 +27,7 @@ void PrintCircuit(circuit* self);
 float Circuit_GetDistributionGraph(circuit* self, resource_type type, uint8_t cycle);
 void Circuit_CalculateDistributionGraphs(circuit* self);
 void Circuit_ScheduleForceDirected(circuit* self);
+void Circuit_ScheduleOperation(circuit* self, component* operation, uint8_t cycle);
+void Circuit_AddResource(circuit* self, resource* new_resource);
 
 #endif /* CIRCUIT_H_ */

@@ -26,7 +26,7 @@ typedef struct struct_component {
 	uint8_t cycle_started_alap;
 	uint8_t time_frame[2];
 	uint8_t cycle_scheduled;
-	bool is_scheduled;
+	uint8_t is_scheduled;
 	net_sign sign;
 	uint8_t width;
 
@@ -230,6 +230,14 @@ uint8_t Component_GetDelayCycle(component* self) {
 	uint8_t ret_value = 0;
 	if(NULL != self) {
 		ret_value = self->delay_cycle;
+	}
+	return ret_value;
+}
+
+uint8_t Component_GetIsScheduled(component* self) {
+	uint8_t ret_value = TRUE;
+	if(NULL != self) {
+		ret_value = self->is_scheduled;
 	}
 	return ret_value;
 }
