@@ -106,6 +106,20 @@ typedef struct {
 	port_type type;
 } port;
 
+typedef enum {
+	transition_if=0,
+	transition_else,
+	transition_all,
+	transition_error
+} transition_type;
+
+typedef struct {
+	transition_type type;
+	net* condition;
+	state* cur_state;
+	state* next_state;
+} transition;
+
 //Circuit
 typedef struct struct_circuit circuit;
 
@@ -125,5 +139,9 @@ extern const float dec_delays[6];
 
 //Resource
 typedef struct struct_resource resource;
+typedef struct struct_state state;
+typedef struct struct_state_machine state_machine;
+
+
 
 #endif /* GLOBAL_H_ */
