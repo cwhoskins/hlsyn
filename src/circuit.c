@@ -230,18 +230,6 @@ void Circuit_ScheduleOperation(circuit* self, component* operation, uint8_t cycl
 	}
 	uint8_t r_idx, resource_available;
 	resource_available = FALSE;
-
-	for(r_idx = 0; r_idx < self->num_resource; r_idx++) {
-		if(op_type == Resource_GetType(self->resource_list[r_idx]) && TRUE == Resource_CheckAvailability(self->resource_list[r_idx], cycle)) { //Resource of same type is available
-			Resource_ScheduleOperation(self->resource_list[r_idx], operation, cycle);
-			resource_available = TRUE;
-		}
-	}
-	if(FALSE == resource_available) { //Must create new resource to schedule operation
-		resource* new_resource = Resource_Create(Component_GetResourceType(operation), self->latency);
-		Circuit_AddResource(self, new_resource);
-		Resource_ScheduleOperation(new_resource, operation, cycle);
-	}
 }
 
 void Circuit_AddResource(circuit* self, resource* new_resource) {

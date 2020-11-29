@@ -113,12 +113,7 @@ typedef enum {
 	transition_error
 } transition_type;
 
-typedef struct {
-	transition_type type;
-	net* condition;
-	state* cur_state;
-	state* next_state;
-} transition;
+typedef struct struct_transition transition;
 
 //Circuit
 typedef struct struct_circuit circuit;
