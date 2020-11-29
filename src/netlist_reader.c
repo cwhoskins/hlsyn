@@ -348,6 +348,10 @@ component_type ReadComponentType(char* word) {
 		ret_value = mux2x1;
 	} else if(0 == strcmp(word, "<") || 0 == strcmp(word, ">") || 0 == strcmp(word, "==")) {
 		ret_value = comparator;
+	} else if(0 == strcmp(word, "if")) {
+		ret_value = transition_if;
+	} else if(0 == strcmp(word, "else")) {
+		ret_value = transition_else;
 	}
 
 	return ret_value;
