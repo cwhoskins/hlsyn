@@ -8,30 +8,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
-void PrintFile(char* file_name, circuit* circ) {
-
-	if(NULL == file_name || NULL == circ) return;
+void PrintStateMachine(char* file_name, state_machine* sm) {
+	if(NULL == file_name || NULL == sm) return;
 
 	FILE* fp;
-	uint8_t idx;
-	uint8_t num_components = Circuit_GetNumComponent(circ);
-	uint8_t num_nets = Circuit_GetNumNet(circ);
-	uint8_t num_inputs = 0;
-	uint8_t num_outputs = 0;
-	uint8_t num_others = 0;
-	int print_return;
-	char log_msg[128];
-
-	net* temp_net = NULL;
-	component* temp_component = NULL;
-	char line_buffer[512];
-
-	char in_list[246] = "";
-	char out_list[246] = "";
-	char format[] = ", ";
-	net* list_temp = NULL;
-	char net_name[64];
 
 
 	LogMessage("MSG: Writing Circuit to file\n", MESSAGE_LEVEL);
@@ -42,94 +22,8 @@ void PrintFile(char* file_name, circuit* circ) {
 		return;
 	}
 
-	for (idx = 0; idx < num_nets; idx++) {
-		list_temp = Circuit_GetNet(circ, idx);
-		if(net_input == Net_GetType(list_temp)) {
-			Net_GetName(list_temp, net_name);
-			strcat(net_name, format);
-			strcat(in_list, net_name);
-			num_inputs++;
-		}
-		else if(net_wire == Net_GetType(list_temp) || net_reg == Net_GetType(list_temp)) {
-			num_others++;
-		}
-	}
+	fprintf(fp, "TODO: Implement file write\n");
 
-	num_outputs = num_nets - num_inputs - num_others;
-
-	for(idx = 0; idx < num_nets; idx++) {
-		list_temp = Circuit_GetNet(circ, idx);
-		if(net_output == Net_GetType(list_temp)) {
-			Net_GetName(list_temp, net_name);
-			if(num_outputs > 1) {
-				strcat(net_name, format);
-				num_outputs--;
-			}
-			strcat(out_list, net_name);
-		}
-	}
-
-	fputs("`timescale 1ns/1ps\n", fp);
-	fprintf(fp, "module generated_module(Clk, Rst, %s%s);\n", in_list, out_list);
-	fputs("\n", fp);
-	fputs("\tinput Clk, Rst;\n", fp);
-
-	//Declare I/O Nets
-	LogMessage("MSG: Writing I/O\n", MESSAGE_LEVEL);
-	for (idx = 0; idx < num_nets; idx++) {
-		temp_net = Circuit_GetNet(circ, idx);
-		if(NULL == temp_net) {
-			LogMessage("Error: Could not retrieve net\n", ERROR_LEVEL);
-			break;
-		} else if(net_input == Net_GetType(temp_net) || net_output == Net_GetType(temp_net)) {
-			DeclareNet(temp_net, line_buffer);
-			print_return = fprintf(fp, line_buffer);
-			if(0 >= print_return) {
-				sprintf(log_msg, "Error: Could not print to file - %d\n", print_return);
-				LogMessage(log_msg, ERROR_LEVEL);
-				break;
-			}
-		}
-	}
-	
-	//Declare internal nets
-	LogMessage("MSG: Writing internal nets\n", MESSAGE_LEVEL);
-	for (idx = 0; idx < num_nets; idx++) {
-		temp_net = Circuit_GetNet(circ, idx);
-		if(NULL == temp_net) {
-			LogMessage("Error: Could not retrieve net\n", ERROR_LEVEL);
-			break;
-		} else if(net_input != Net_GetType(temp_net) && net_output != Net_GetType(temp_net)) {
-			DeclareNet(temp_net, line_buffer);
-			print_return = fprintf(fp, line_buffer);
-			if(0 >= print_return) {
-				sprintf(log_msg, "Error: Could not print to file - %d\n", print_return);
-				LogMessage(log_msg, ERROR_LEVEL);
-				break;
-			}
-		}
-	}
-
-	fputs("\n", fp);
-
-	//Declare Components
-	LogMessage("MSG: Instantiating datapath components\n", MESSAGE_LEVEL);
-	for (idx = 0; idx < num_components; idx++) {
-		temp_component = Circuit_GetComponent(circ, idx);
-		if(NULL == temp_component) {
-			LogMessage("Error: Could not retrieve component\n", ERROR_LEVEL);
-			break;
-		}
-		DeclareComponent(temp_component, line_buffer, idx);
-		print_return = fprintf(fp, line_buffer);
-		if(0 >= print_return) {
-			sprintf(log_msg, "Error: Could not print to file - %d\n", print_return);
-			LogMessage(log_msg, ERROR_LEVEL);
-			break;
-		}
-	}
-	fputs("\n", fp);
-	fputs("endmodule\n", fp);
 
 	fclose(fp);
 }

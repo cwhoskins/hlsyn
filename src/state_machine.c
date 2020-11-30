@@ -24,14 +24,11 @@ state_machine* StateMachine_Create(uint8_t latency) {
 	if(NULL != new_sm) {
 		new_sm->state_list = (state**) malloc(max_state * sizeof(state*));
 		new_sm->num_states = 0;
-		transition head2tail;
 		new_sm->head = State_Create(0);
 		new_sm->tail = State_Create(latency + 1);
-		if(NULL != new_sm->head && NULL != new_sm->head && NULL != new_sm->state_list) {
-			head2tail.type = transition_all;
-			head2tail.condition = NULL;
-			head2tail.next_state = new_sm->tail;
-			State_AddNextState(new_sm->head, head2tail);
+		if(NULL != new_sm->head && NULL != new_sm->tail && NULL != new_sm->state_list) {
+			State_AddNextState(new_sm->head, new_sm->tail);
+			State_AddPreviousState(new_sm->tail, new_sm->head);
 		} else {
 			StateMachine_Destroy(&new_sm);
 		}
@@ -40,40 +37,15 @@ state_machine* StateMachine_Create(uint8_t latency) {
 }
 
 void StateMachine_ScheduleOperation(state_machine* self, component* op, uint8_t cycle) {
-	uint8_t idx;
-	state* temp_state = NULL;
 	state* schedule_state = NULL;
-	net* conditional_net = NULL; //TODO: Retrieve from component
 	if(NULL != self && NULL != op && cycle > 0) {
 		//First search to see if state currently exists
-		/* Pseudocode
-		 * Search through states in SM
-		 * Check if cycle & condition are the same
-		 */
-		for(idx = 0; idx < self->num_states;idx++) {
-			temp_state = self->state_list[idx];
-			if(cycle == State_GetCycle(temp_state)) { //Same Cycle
-				if(Component_GetConditional(op) == State_GetConditional(temp_state)) { //Same condition
-					schedule_state = temp_state;
-					break;
-				}
-			}
-		}
+		schedule_state = StateMachine_FindState(self, NULL, cycle);
 		if(NULL == schedule_state) { //State could not be found
 			//Create State
 			schedule_state = State_Create(cycle);
 			//Add new state to SM
 			StateMachine_AddState(self, schedule_state);
-
-			/* Pseudocode
-			 * Create State
-			 * Check if component is under a condition
-			 * If so
-			 * 		Create transition and apply condition
-			 * else
-			 * 		Create transition and apply no condition
-			 * Tie new state to previous state
-			 */
 		}
 		//Add component to state
 		State_AddOperation(schedule_state, op);
@@ -81,10 +53,25 @@ void StateMachine_ScheduleOperation(state_machine* self, component* op, uint8_t 
 }
 
 void StateMachine_AddState(state_machine* self, state* new_state) {
+	uint8_t cur_cycle, next_cycle, new_cycle;
+	state* cur_state;
+	state* next_state;
 	if(NULL != self && NULL != new_state) {
 		//Add it to the list
 		self->state_list[self->num_states] = new_state;
 		self->num_states++;
+		new_cycle = State_GetCycle(new_state);
+		cur_state = self->head;
+		while(NULL != cur_state) {
+			next_state = State_GetNextState(cur_state);
+			cur_cycle = State_GetCycle(cur_state);
+			next_cycle = State_GetCycle(next_state);
+			if(new_cycle > cur_cycle && new_cycle < next_cycle) {
+				State_AddNextState(cur_state, new_state); //Update link so that current state links to new_state
+				State_AddPreviousState(next_state, new_state); //and next_state links back to new_state
+				break;
+			}
+		}
 	}
 }
 
@@ -96,10 +83,9 @@ state* StateMachine_FindState(state_machine* self, void* conditional, uint8_t cy
 		for(idx = 0; idx < self->num_states;idx++) {
 			temp_state = self->state_list[idx];
 			if(cycle == State_GetCycle(temp_state)) { //Same Cycle
-				if(conditional == State_GetConditional(temp_state)) { //Same condition
-					ret_value = temp_state;
-					break;
-				}
+//				if(conditional == State_GetConditional(temp_state)) { //Same condition
+				ret_value = temp_state;
+				break;
 			}
 		}
 	}
@@ -107,6 +93,16 @@ state* StateMachine_FindState(state_machine* self, void* conditional, uint8_t cy
 }
 
 void StateMachine_Destroy(state_machine** self) {
-
+	if(NULL != (*self)) {
+		State_Destroy(&(*self)->head);
+		State_Destroy(&(*self)->tail);
+		while((*self)->num_states > 0) {
+			(*self)->num_states--;
+			State_Destroy(&((*self)->state_list[(*self)->num_states]));
+		}
+		free((*self)->state_list);
+		free(*self);
+		*self = NULL;
+	}
 }
 

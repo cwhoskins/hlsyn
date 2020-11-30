@@ -28,8 +28,6 @@ typedef struct struct_circuit {
 	float critical_path_ns;
 	float* distribution_graphs[4];
 	uint8_t latency;
-	resource** resource_list;
-	uint8_t num_resource;
 } circuit;
 
 circuit* Circuit_Create() {
@@ -41,12 +39,12 @@ circuit* Circuit_Create() {
 		new_circuit->num_nets = 0;
 		new_circuit->num_inputs = 0;
 		new_circuit->num_outputs = 0;
+		new_circuit->num_components = 0;
 		new_circuit->critical_path_ns = 0.0f;
 		new_circuit->input_nets = (net**) malloc(max_inputs * sizeof(net*));
 		new_circuit->netlist = (net**) malloc(max_nets * sizeof(net*));
 		new_circuit->output_nets = (net**) malloc(max_nets * sizeof(net*));
 		new_circuit->component_list = (component**) malloc(max_nets * sizeof(component*));
-		new_circuit->resource_list = (resource**) malloc(max_nets * sizeof(resource*));
 		for(idx = 0; idx < 4; idx++) {
 			new_circuit->distribution_graphs[idx] = (float*) malloc(new_circuit->latency * sizeof(float));
 			if(NULL == new_circuit->distribution_graphs[idx]) {
@@ -188,54 +186,36 @@ uint8_t Circuit_ScheduleALAP(circuit* self) {
 	return ret_value;
 }
 
-void Circuit_ScheduleForceDirected(circuit* self) {
-	if(NULL == self) return;
+void Circuit_ScheduleForceDirected(circuit* self, state_machine* sm) {
+
 	uint8_t s_idx, cycle_idx, comp_idx, min_cycle;
 	component* min_component;
 	float min_force, self_force, suc_force, pred_force, total_force;
-	Circuit_ScheduleASAP(self);
-	Circuit_ScheduleALAP(self);
-	for(s_idx = 0; s_idx < self->num_components; s_idx++) { //Cycle through every operation so that all get scheduled
-		Circuit_CalculateDistributionGraphs(self);
-		for(comp_idx = 0; comp_idx < self->num_components; comp_idx++) {
-			if(FALSE == Component_GetIsScheduled(self->component_list[comp_idx])) { //Skip component if it's already been scheduled
-				for(cycle_idx = 1; cycle_idx <= self->latency; cycle_idx++) {
-					self_force = Component_CalculateSelfForce(self->component_list[comp_idx], self, cycle_idx);
-					suc_force = Component_CalculateSuccessorForce(self->component_list[comp_idx], self, cycle_idx);
-					pred_force = Component_CalculatePredecessorForce(self->component_list[comp_idx], self, cycle_idx);
-					total_force = self_force + suc_force + pred_force;
-					if((1 == cycle_idx && 0 == comp_idx) || (total_force < min_force)) {
-						min_force = total_force;
-						min_component = self->component_list[comp_idx];
-						min_cycle = cycle_idx;
+
+	if(NULL != self && NULL != sm) {
+		Circuit_ScheduleASAP(self);
+		Circuit_ScheduleALAP(self);
+		for(s_idx = 0; s_idx < self->num_components; s_idx++) { //Cycle through every operation so that all get scheduled
+			Circuit_CalculateDistributionGraphs(self);
+			for(comp_idx = 0; comp_idx < self->num_components; comp_idx++) {
+				if(FALSE == Component_GetIsScheduled(self->component_list[comp_idx])) { //Skip component if it's already been scheduled
+					for(cycle_idx = 1; cycle_idx <= self->latency; cycle_idx++) {
+						self_force = Component_CalculateSelfForce(self->component_list[comp_idx], self, cycle_idx);
+						suc_force = Component_CalculateSuccessorForce(self->component_list[comp_idx], self, cycle_idx);
+						pred_force = Component_CalculatePredecessorForce(self->component_list[comp_idx], self, cycle_idx);
+						total_force = self_force + suc_force + pred_force;
+						if((1 == cycle_idx && 0 == comp_idx) || (total_force < min_force)) {
+							min_force = total_force;
+							min_component = self->component_list[comp_idx];
+							min_cycle = cycle_idx;
+						}
 					}
 				}
 			}
+			StateMachine_ScheduleOperation(sm, min_component, min_cycle);
 		}
-		Circuit_ScheduleOperation(self, min_component, min_cycle);
-	}
-
-}
-
-void Circuit_ScheduleOperation(circuit* self, component* operation, uint8_t cycle) {
-	if(NULL == self || NULL == operation) return;
-	if(cycle < 1 || cycle > self->latency) {
-		LogMessage("ERROR(Circuit_ScheduleOperation): Invalid Scheduling Cycle\n", ERROR_LEVEL);
-		return;
-	}
-	resource_type op_type = Component_GetResourceType(operation);
-	if(resource_error == op_type) {
-		LogMessage("Error(Circuit_ScheduleOperation): Unknown resource type\n", ERROR_LEVEL);
-		return;
-	}
-	uint8_t r_idx, resource_available;
-	resource_available = FALSE;
-}
-
-void Circuit_AddResource(circuit* self, resource* new_resource) {
-	if(NULL != new_resource && NULL != self) {
-		self->resource_list[self->num_resource] = new_resource;
-		self->num_resource++;
+	} else {
+		LogMessage("ERROR(Circuit_ScheduleForceDirected): Invalid input pointers\n", ERROR_LEVEL);
 	}
 }
 
@@ -270,7 +250,7 @@ float Circuit_GetDistributionGraph(circuit* self, resource_type type, uint8_t cy
 
 void Circuit_Destroy(circuit** self) {
 	uint8_t idx = 0;
-	if(NULL != *self) {
+	if(NULL != (*self)) {
 		while(idx < (*self)->num_nets) {
 			Net_Destroy(&((*self)->netlist[idx]));
 			idx++;
@@ -286,7 +266,6 @@ void Circuit_Destroy(circuit** self) {
 		free((*self)->input_nets);
 		free((*self)->netlist);
 		free((*self)->component_list);
-		free((*self)->resource_list);
 		free((*self));
 		*self = NULL;
 	}

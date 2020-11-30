@@ -46,6 +46,9 @@ port Component_GetInputPort(component* self, uint8_t idx);
 port Component_GetOutputPort(component* self, uint8_t idx);
 net_sign Component_GetSign(component* self);
 
+//Placeholders
+condition Component_GetCondition(component* self);
+
 void Component_Destroy(component** self);
 
 #endif /* COMPONENT_H_ */

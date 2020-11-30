@@ -1,0 +1,13 @@
+hlsyn started
+MSG: Parsing Line # 1
+MSG: Parsing Net Declaration
+MSG: Parsing Line # 2
+MSG: Line Ignored - Comment
+MSG: Parsing Line # 3
+MSG: Parsing Net Declaration
+MSG: Parsing Line # 4
+MSG: Parsing Net Declaration
+MSG: Parsing Line # 5
+MSG: Line Ignored - Comment
+MSG: Parsing Line # 6
+ERROR: Undeclared variable used

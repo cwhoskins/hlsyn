@@ -10,6 +10,7 @@
 
 
 #include "global.h"
+#include "state_machine.h"
 
 circuit* Circuit_Create();
 net* Circuit_FindNet(circuit* self, char* name);
@@ -28,7 +29,7 @@ float Circuit_GetDistributionGraph(circuit* self, resource_type type, uint8_t cy
 void Circuit_CalculateDistributionGraphs(circuit* self);
 uint8_t Circuit_ScheduleALAP(circuit* self);
 void Circuit_ScheduleASAP(circuit* self);
-void Circuit_ScheduleForceDirected(circuit* self);
+void Circuit_ScheduleForceDirected(circuit* self, state_machine* sm);
 void Circuit_ScheduleOperation(circuit* self, component* operation, uint8_t cycle);
 void Circuit_AddResource(circuit* self, resource* new_resource);
 

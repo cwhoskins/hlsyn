@@ -60,6 +60,8 @@ typedef enum enum_comp_type {
 	modulo,
 	incrementer,
 	decrementer,
+	component_if,
+	component_else,
 	component_unknown
 } component_type;
 
@@ -114,6 +116,11 @@ typedef enum {
 } transition_type;
 
 typedef struct struct_transition transition;
+
+typedef struct struct_condition {
+	transition_type type;
+	net* net_condition;
+} condition;
 
 //Circuit
 typedef struct struct_circuit circuit;
