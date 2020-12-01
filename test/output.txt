@@ -10,4 +10,64 @@ MSG: Parsing Net Declaration
 MSG: Parsing Line # 5
 MSG: Line Ignored - Comment
 MSG: Parsing Line # 6
-ERROR: Undeclared variable used
+MSG: Parsing Net Declaration
+MSG: Parsing Line # 7
+MSG: Line Ignored - Comment
+MSG: Parsing Line # 8
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 9
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 10
+MSG: Parsing Variable Assignment
+MSG: Component is comparator
+MSG: Parsing Line # 11
+MSG: Parsing Variable Assignment
+MSG: Component is mux
+MSG: Parsing Line # 12
+MSG: Parsing Variable Assignment
+MSG: Component is *
+MSG: Parsing Line # 13
+MSG: Parsing Variable Assignment
+MSG: Component is -
+MSG: Net a assigned at cycle 1
+MSG: Component scheduled from cycle 1 to 2
+MSG: Net d assigned at cycle 2
+MSG: Component scheduled from cycle 2 to 3
+MSG: Net g assigned at cycle 3
+MSG: Component scheduled from cycle 3 to 4
+MSG: Net z assigned at cycle 4
+MSG: Component scheduled from cycle 2 to 3
+MSG: Net x assigned at cycle 3
+MSG: Component scheduled from cycle 1 to 2
+MSG: Net e assigned at cycle 2
+MSG: Component scheduled from cycle 1 to 3
+MSG: Net f assigned at cycle 3
+MSG: Component scheduled from cycle 3 to 4
+MSG: Net x assigned at cycle 4
+MSG: Net b assigned at cycle 1
+MSG: Net c assigned at cycle 1
+MSG: Net z assigned at cycle 13
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 12 to 13
+MSG: Net d assigned at cycle 12
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 11 to 12
+MSG: Net a assigned at cycle 11
+MSG: Net b assigned at cycle 11
+MSG: Net e assigned at cycle 12
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 11 to 12
+MSG: Net c assigned at cycle 11
+MSG: Net g assigned at cycle 12
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 11 to 12
+MSG: Net d assigned at cycle 11
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 10 to 11
+MSG: Net a assigned at cycle 10
+MSG: Net b assigned at cycle 10
+MSG: Net e assigned at cycle 11
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 10 to 11
+MSG: Net c assigned at cycle 10
+MSG: Net x assigned at cycle 13
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 12 to 13
+MSG: Net f assigned at cycle 12
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 10 to 12
+MSG: Writing Circuit to file

@@ -127,13 +127,6 @@ uint8_t ParseAssignmentLine(char* first_word, circuit* netlist_circuit) {
 		word = strtok(NULL," ,\r\n");
 		word_idx++;
 	}
-	//Check if output net needs to be buffered with register component
-	if((net_reg == Net_GetType(component_nets[0]) || net_output == Net_GetType(component_nets[0])) && type != load_register) {
-		if(SUCCESS != BufferNet(&component_nets[0], netlist_circuit)) {
-			LogMessage("ERROR: Buffering Net\r\n", ERROR_LEVEL);
-			ret = FAILURE;
-		}
-	}
 
 	new_component = Component_Create(type);
 	if(NULL != new_component) {
@@ -312,7 +305,7 @@ word_class CheckWordType(char* word) {
 
 	word_class ret_value = WORD_ERROR;
 	if(NULL == word) return COMMENT_DECLARATION;
-	if(0 == strcmp(word, "input") || 0 == strcmp(word, "output") || 0 == strcmp(word, "wire") || 0 == strcmp(word, "register")) {
+	if(0 == strcmp(word, "input") || 0 == strcmp(word, "output") || 0 == strcmp(word, "wire") || 0 == strcmp(word, "register") || 0 == strcmp(word, "variable")) {
 		ret_value = NET_DECLARATION;
 	} else if(component_unknown != ReadComponentType(word)) {
 		ret_value = COMPONENT_DECLARATION;
@@ -386,6 +379,8 @@ net_type ReadNetType(char* word) {
 		type = net_wire;
 	} else if(0 == strcmp(word, "register\0")) {
 		type = net_reg;
+	} else if(0 == strcmp(word, "variable")) {
+		type = net_variable;
 	}
 	return type;
 }

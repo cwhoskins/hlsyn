@@ -41,6 +41,8 @@ net* Net_Create(char* name, net_type type, net_sign sign, uint8_t width) {
 		new_net->driver = NULL;
 		new_net->delay_ns = -1.0f;
 		new_net->num_receivers = 0;
+		new_net->cycle_assigned_alap = 255;
+		new_net->cycle_assigned_asap = 0;
 		new_net->receivers = (component**) malloc(max_receivers * sizeof(component*));
 		if(NULL == new_net->receivers) {
 			Net_Destroy(&new_net);
@@ -100,7 +102,9 @@ uint8_t Net_SchedulePathALAP(net* self, uint8_t cycle) {
 			LogMessage(log_msg, MESSAGE_LEVEL);
 
 			self->cycle_assigned_alap = cycle;
-			ret_value = Component_SchedulePathALAP(self->driver, cycle);
+			if(NULL != self->driver) {
+				ret_value = Component_SchedulePathALAP(self->driver, cycle);
+			}
 		}
 	} else {
 		ret_value = FAILURE;

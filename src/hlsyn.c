@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
 
 	const uint8_t test_standard = TRUE;
-#define num_standard_cases 7
+#define num_standard_cases 1
 	const uint8_t test_latency = FALSE;
 #define num_latency_cases 6
 	const uint8_t test_if = FALSE;
@@ -89,6 +89,7 @@ int main(int argc, char *argv[]) {
 			sprintf(verilog_file, "./test/outputs/if%d.v", idx);
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
 				Circuit_ScheduleForceDirected(netlist_circuit, sm);
+
 			}
 			Circuit_Destroy(&netlist_circuit);
 			StateMachine_Destroy(&sm);

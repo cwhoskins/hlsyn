@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 typedef struct struct_circuit {
 	net** input_nets;
@@ -29,6 +30,8 @@ typedef struct struct_circuit {
 	float* distribution_graphs[4];
 	uint8_t latency;
 } circuit;
+
+void Circuit_TestPrint(circuit* self);
 
 circuit* Circuit_Create() {
 	const uint8_t max_inputs = 32;
@@ -195,6 +198,8 @@ void Circuit_ScheduleForceDirected(circuit* self, state_machine* sm) {
 	if(NULL != self && NULL != sm) {
 		Circuit_ScheduleASAP(self);
 		Circuit_ScheduleALAP(self);
+		Circuit_TestPrint(self);
+		return;
 		for(s_idx = 0; s_idx < self->num_components; s_idx++) { //Cycle through every operation so that all get scheduled
 			Circuit_CalculateDistributionGraphs(self);
 			for(comp_idx = 0; comp_idx < self->num_components; comp_idx++) {
@@ -268,5 +273,27 @@ void Circuit_Destroy(circuit** self) {
 		free((*self)->component_list);
 		free((*self));
 		*self = NULL;
+	}
+}
+
+void Circuit_TestPrint(circuit* self) {
+	uint8_t idx;
+	char line_buffer[512];
+	char type_declaration[8];
+	FILE* fp;
+	uint8_t asap, alap;
+	if(NULL != self) {
+		fp = fopen("./test/time_frame.txt", "w+");
+		if(NULL == fp) {
+			LogMessage("Error: Cannot open output file\n", ERROR_LEVEL);
+			return;
+		}
+		for(idx=0;idx<self->num_components;idx++) {
+			DeclareComponent(self->component_list[idx], line_buffer, idx);
+			asap = Component_GetTimeFrameStart(self->component_list[idx]);
+			alap = Component_GetTimeFrameEnd(self->component_list[idx]);
+			fprintf(fp, "%s\tASAP: %d\n\tALAP: %d\n\n", line_buffer, asap, alap);
+		}
+		fclose(fp);
 	}
 }

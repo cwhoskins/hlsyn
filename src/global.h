@@ -35,6 +35,7 @@ typedef enum enum_net_type {
 	net_reg,
 	net_input,
 	net_output,
+	net_variable,
 	net_error
 } net_type;
 
