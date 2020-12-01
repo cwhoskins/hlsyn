@@ -45,13 +45,13 @@ int main(int argc, char *argv[]) {
 
 	if(TRUE == test_standard) {
 		uint8_t latency[num_standard_cases] = {4, 6, 10, 8, 11, 34, 8};
-		for(idx = 1; idx <= num_standard_cases; idx++) {
+		for(idx = 0; idx < num_standard_cases; idx++) {
 			//Create structs for iteration
-			netlist_circuit = Circuit_Create();
+			netlist_circuit = Circuit_Create(latency[idx]);
 			sm = StateMachine_Create(latency[idx]);
 			//Spell out file names
-			sprintf(c_file, "./test/standard/hls_test%d.c", idx);
-			sprintf(verilog_file, "./test/outputs/standard%d.v", idx);
+			sprintf(c_file, "./test/standard/hls_test%d.c", (idx+1));
+			sprintf(verilog_file, "./test/outputs/standard%d.v", (idx+1));
 
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
 				Circuit_ScheduleForceDirected(netlist_circuit, sm);
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 	if(TRUE == test_latency) {
 		uint8_t latency[num_latency_cases] = {4, 9, 2, 4, 6, 6};
 		for(idx = 1; idx <= num_latency_cases; idx++) {
-			netlist_circuit = Circuit_Create();
+			netlist_circuit = Circuit_Create(latency[idx]);
 			sm = StateMachine_Create(latency[idx]);
 			sprintf(c_file, "./test/latency/hls_test%d.c", idx);
 			sprintf(verilog_file, "./test/outputs/latency%d.v", idx);
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 	if(TRUE == test_if) {
 		uint8_t latency[num_if_cases] = {4, 4, 8, 4};
 		for(idx = 1; idx <= num_if_cases; idx++) {
-			netlist_circuit = Circuit_Create();
+			netlist_circuit = Circuit_Create(latency[idx]);
 			sm = StateMachine_Create(latency[idx]);
 			sprintf(c_file, "./test/if/hls_test%d.c", idx);
 			sprintf(verilog_file, "./test/outputs/if%d.v", idx);
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
 	if(TRUE == test_error) {
 		uint8_t latency[num_error_cases] = {10, 10, 10}; //Doesn't matter just for function calls
 		for(idx = 1; idx <= num_error_cases; idx++) {
-			netlist_circuit = Circuit_Create();
+			netlist_circuit = Circuit_Create(latency[idx]);
 			sm = StateMachine_Create(latency[idx]);
 			sprintf(c_file, "./test/error/hls_test%d.c", idx);
 			sprintf(verilog_file, "./test/outputs/error%d.v", idx);

@@ -48,26 +48,26 @@ MSG: Component scheduled from cycle 3 to 4
 MSG: Net x assigned at cycle 4
 MSG: Net b assigned at cycle 1
 MSG: Net c assigned at cycle 1
-MSG: Net z assigned at cycle 13
-MSG(Component_SchedulePathALAP): Component scheduled from cycle 12 to 13
-MSG: Net d assigned at cycle 12
-MSG(Component_SchedulePathALAP): Component scheduled from cycle 11 to 12
-MSG: Net a assigned at cycle 11
-MSG: Net b assigned at cycle 11
-MSG: Net e assigned at cycle 12
-MSG(Component_SchedulePathALAP): Component scheduled from cycle 11 to 12
-MSG: Net c assigned at cycle 11
-MSG: Net g assigned at cycle 12
-MSG(Component_SchedulePathALAP): Component scheduled from cycle 11 to 12
-MSG: Net d assigned at cycle 11
-MSG(Component_SchedulePathALAP): Component scheduled from cycle 10 to 11
-MSG: Net a assigned at cycle 10
-MSG: Net b assigned at cycle 10
-MSG: Net e assigned at cycle 11
-MSG(Component_SchedulePathALAP): Component scheduled from cycle 10 to 11
-MSG: Net c assigned at cycle 10
-MSG: Net x assigned at cycle 13
-MSG(Component_SchedulePathALAP): Component scheduled from cycle 12 to 13
-MSG: Net f assigned at cycle 12
-MSG(Component_SchedulePathALAP): Component scheduled from cycle 10 to 12
+MSG: Net z assigned at cycle 5
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 4 to 5
+MSG: Net d assigned at cycle 4
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 3 to 4
+MSG: Net a assigned at cycle 3
+MSG: Net b assigned at cycle 3
+MSG: Net e assigned at cycle 4
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 3 to 4
+MSG: Net c assigned at cycle 3
+MSG: Net g assigned at cycle 4
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 3 to 4
+MSG: Net d assigned at cycle 3
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 2 to 3
+MSG: Net a assigned at cycle 2
+MSG: Net b assigned at cycle 2
+MSG: Net e assigned at cycle 3
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 2 to 3
+MSG: Net c assigned at cycle 2
+MSG: Net x assigned at cycle 5
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 4 to 5
+MSG: Net f assigned at cycle 4
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 2 to 4
 MSG: Writing Circuit to file

@@ -1,24 +1,24 @@
 	Add #(.DATA_WIDTH(8)) Add_0 (.a(a), .b(b), .sum(d));
 	ASAP: 1
-	ALAP: 10
+	ALAP: 2
 
 	Add #(.DATA_WIDTH(8)) Add_1 (.a(a), .b(c), .sum(e));
 	ASAP: 1
-	ALAP: 10
+	ALAP: 2
 
 	Comp #(.DATA_WIDTH(8)) Comp_2 (.a(d), .b(e), .gt(g));
 	ASAP: 2
-	ALAP: 11
+	ALAP: 3
 
 	Mux2x1 #(.DATA_WIDTH(8)) Mux2x1_3 (.a(d), .b(e), .sel(g), .d(z));
 	ASAP: 3
-	ALAP: 12
+	ALAP: 4
 
 	Mul #(.DATA_WIDTH(8)) Mul_4 (.a(a), .b(c), .prod(f));
 	ASAP: 1
-	ALAP: 10
+	ALAP: 2
 
 	Sub #(.DATA_WIDTH(16)) Sub_5 (.a({{8{1'b0}}, f}), .b({{8{1'b0}}, d}), .diff(x));
 	ASAP: 3
-	ALAP: 12
+	ALAP: 4
 

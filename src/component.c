@@ -284,7 +284,9 @@ resource_type Component_GetResourceType(component* self) {
 float Component_GetProbability(component* self, uint8_t cycle) {
 	float ret_value = 0.0f;
 	if(NULL != self) {
-		ret_value = 1 / ((float) ((self->time_frame[1] - self->time_frame[0]) + 1));
+		if(cycle >= self->time_frame[0] && cycle <= self->time_frame[1]) {
+			ret_value = 1.0f / (((float)(self->time_frame[1] - self->time_frame[0])) + 1.0f);
+		}
 	}
 	return ret_value;
 }

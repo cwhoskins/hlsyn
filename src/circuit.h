@@ -12,7 +12,7 @@
 #include "global.h"
 #include "state_machine.h"
 
-circuit* Circuit_Create();
+circuit* Circuit_Create(uint8_t latency);
 net* Circuit_FindNet(circuit* self, char* name);
 component* Circuit_GetComponent(circuit* self, uint8_t idx);
 uint8_t Circuit_GetNumComponent(circuit* self);
