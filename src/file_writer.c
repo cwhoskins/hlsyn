@@ -8,11 +8,27 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void PrintStateMachine(char* file_name, state_machine* sm) {
-	if(NULL == file_name || NULL == sm) return;
+void PrintStateMachine(char* file_name, circuit* circ) {
+	if(NULL == file_name || NULL == circ) return;
 
 	FILE* fp;
+	uint8_t idx;
+	uint8_t num_nets = Circuit_GetNumNet(circ);
+	uint8_t num_comps = Circuit_GetNumComponent(circ);
+	uint8_t num_ins = 0;
+	uint8_t num_outs = 0;
+	uint8_t num_vars = 0;
+	int print_return;
 
+	char log_msg[128];
+	char in_list[256] = "";
+	char out_list[256] = "";
+	char format[] = ", ";
+	char net_name[64];
+	char line_buffer[512];
+	net* list_temp = NULL;
+	net* temp_net = NULL;
+	component* temp_comp = NULL;
 
 	LogMessage("MSG: Writing Circuit to file\n", MESSAGE_LEVEL);
 
@@ -24,6 +40,108 @@ void PrintStateMachine(char* file_name, state_machine* sm) {
 
 	fprintf(fp, "TODO: Implement file write\n");
 
+	// Create inputs list
+	for(idx = 0; idx < num_nets; idx++) {
+		list_temp = Circuit_GetNet(circ, idx);
+		if(net_input == Net_GetType(list_temp)) {
+			Net_GetName(list_temp, net_name);
+			strcat(net_name, format);
+			strcat(in_list, net_name);
+		}
+		else if(net_input != Net_GetType(list_temp) && net_output != Net_GetType(list_temp)) {
+			num_vars++;
+		}
+	}
+
+	// Create outputs list
+	num_outs = num_nets - num_ins - num_vars;
+
+	for(idx = 0; idx < num_nets; idx++) {
+		list_temp = Circuit_GetNet(circ, idx);
+		if(net_output == Net_GetType(list_temp)) {
+			Net_GetName(list_temp, net_name);
+			if(num_outs > 1) {
+				strcat(net_name, format);
+				num_outs--;
+			}
+			strcat(out_list, net_name);
+		}
+	}
+
+
+	fputs("'timescale 1ns/1ps\n", fp);
+	fputs("'default_nettype none\n", fp);
+	fprintf(fp, "module HLSM(Clk, Rst, Start, %sDone, %s);\n", in_list, out_list);
+	fputs("\n", fp);
+	fputs("localparam OUTPUT_WIDTH = 2*DATA_WIDTH;\n", fp);
+	fputs("\n", fp);
+
+	// List inputs
+	LogMessage("MSG: Writing I/O\n", MESSAGE_LEVEL);
+	fputs("\tinput Clk, Rst, Start;\n", fp);
+	for(idx = 0; idx < num_nets; idx++) {
+		temp_net = Circuit_GetNet(circ, idx);
+		if(NULL == temp_net) {
+			LogMessage("Error: Could not retrieve net\n", ERROR_LEVEL);
+			break;
+		}
+		else if(net_input == Net_GetType(temp_net)) {
+			DeclareNet(temp_net, line_buffer);
+			print_return = fprintf(fp, line_buffer);
+			if(0 >= print_return) {
+				sprintf(log_msg, "Error: Could not print to file - %d\n", print_return);
+				LogMessage(log_msg, ERROR_LEVEL);
+				break;
+			}
+		}
+	}
+
+	fputs("\n", fp); // Spacing between inputs and outputs
+
+	// List outputs
+	fputs("\tDone;\n", fp);
+	for(idx = 0; idx < num_nets; idx++) {
+		temp_net = Circuit_GetNet(circ, idx);
+		if(NULL == temp_net) {
+			LogMessage("Error: Could not retrieve net\n", ERROR_LEVEL);
+			break;
+		}
+		else if(net_output == Net_GetType(temp_net)) {
+			DeclareNet(temp_net, line_buffer);
+			print_return = fprintf(fp, line_buffer);
+			if(0 >= print_return) {
+				sprintf(log_msg, "Error: Could not print to file - %d\n", print_return);
+				LogMessage(log_msg, ERROR_LEVEL);
+				break;
+			}
+		}
+	}
+
+	fputs("\n", fp); // Spacing between I/O and internal nets
+
+	// List variables
+	LogMessage("MSG: Writing internal nets\n", MESSAGE_LEVEL);
+	for(idx = 0; idx < num_nets; idx++) {
+		temp_net = Circuit_GetNet(circ, idx);
+		if(NULL == temp_net) {
+			LogMessage("Error: Could not retrieve net\n", ERROR_LEVEL);
+			break;
+		}
+		else if(net_input != Net_GetType(list_temp) && net_output != Net_GetType(list_temp)) {
+			DeclareNet(temp_net, line_buffer);
+			print_return = fprintf(fp, line_buffer);
+			if(0 >= print_return) {
+				sprintf(log_msg, "Error: Could not print to file - %d\n", print_return);
+				LogMessage(log_msg, ERROR_LEVEL);
+				break;
+			}
+		}
+	}
+
+	fputs("\n", fp); // Spacing between nets and HLSM
+
+	fputs("\n", fp);
+	fputs("endmodule\n", fp);
 
 	fclose(fp);
 }
