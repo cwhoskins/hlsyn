@@ -167,7 +167,7 @@ float Component_CalculateSelfForce(component* self, circuit* circ, uint8_t cycle
 	float dg, prob, sf, partial_sum;
 	prob = 1.0f / ((float) ((self->time_frame[1] - self->time_frame[0]) + 1.0f));
 	sf = 0.0f;
-	if(cycle > self->time_frame[1] || self->time_frame[0] < cycle) return 0.0f;
+	if(cycle > self->time_frame[1] || cycle < self->time_frame[0]) return 0.0f;
 	for(idx = self->time_frame[0]; idx <= self->time_frame[1]; idx++) {
 		dg = Circuit_GetDistributionGraph(circ, self->resource_class, idx);
 		if(cycle == idx) {

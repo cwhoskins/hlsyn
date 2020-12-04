@@ -34,8 +34,8 @@ typedef struct struct_circuit {
 void Circuit_TestPrint(circuit* self);
 void Circuit_PrintDistributionGraph(circuit* self);
 circuit* Circuit_Create(uint8_t latency) {
-	const uint8_t max_inputs = 32;
-	const uint8_t max_nets = 32;
+	const uint8_t max_inputs = 64;
+	const uint8_t max_nets = 128;
 	uint8_t idx;
 	circuit* new_circuit = (circuit*) malloc(sizeof(circuit));
 	if(NULL != new_circuit) {
@@ -194,7 +194,11 @@ void Circuit_ScheduleForceDirected(circuit* self, state_machine* sm) {
 
 	uint8_t s_idx, cycle_idx, comp_idx, min_cycle;
 	component* min_component;
+	uint8_t first_component = 0;
 	float min_force, self_force, suc_force, pred_force, total_force;
+	uint8_t cycle_start, cycle_end;
+	char log_msg[128], scheduled_net_name[8];
+	net* scheduled_net;
 
 	if(NULL != self && NULL != sm) {
 		Circuit_ScheduleASAP(self);
@@ -202,25 +206,35 @@ void Circuit_ScheduleForceDirected(circuit* self, state_machine* sm) {
 		Circuit_TestPrint(self);
 		Circuit_CalculateDistributionGraphs(self);
 		Circuit_PrintDistributionGraph(self);
-		return;
 		for(s_idx = 0; s_idx < self->num_components; s_idx++) { //Cycle through every operation so that all get scheduled
 			Circuit_CalculateDistributionGraphs(self);
 			for(comp_idx = 0; comp_idx < self->num_components; comp_idx++) {
 				if(FALSE == Component_GetIsScheduled(self->component_list[comp_idx])) { //Skip component if it's already been scheduled
-					for(cycle_idx = 1; cycle_idx <= self->latency; cycle_idx++) {
+
+					cycle_start = Component_GetTimeFrameStart(self->component_list[comp_idx]);
+					cycle_end = Component_GetTimeFrameEnd(self->component_list[comp_idx]);
+					for(cycle_idx = cycle_start; cycle_idx <= cycle_end; cycle_idx++) {
+
 						self_force = Component_CalculateSelfForce(self->component_list[comp_idx], self, cycle_idx);
 						suc_force = Component_CalculateSuccessorForce(self->component_list[comp_idx], self, cycle_idx);
 						pred_force = Component_CalculatePredecessorForce(self->component_list[comp_idx], self, cycle_idx);
 						total_force = self_force + suc_force + pred_force;
-						if((1 == cycle_idx && 0 == comp_idx) || (total_force < min_force)) {
+						if(0 == first_component || total_force < min_force) {
 							min_force = total_force;
 							min_component = self->component_list[comp_idx];
 							min_cycle = cycle_idx;
+							first_component = 1;
 						}
 					}
 				}
 			}
+			port output_port = Component_GetOutputPort(min_component, 0);
+			scheduled_net = output_port.port_net;
+			Net_GetName(scheduled_net, scheduled_net_name);
+			sprintf(log_msg, "MSG(Circuit_ScheduleForceDirected): %s scheduled to cycle %d with force %.2f\n", scheduled_net_name, min_cycle, min_force);
+			LogMessage(log_msg, MESSAGE_LEVEL);
 			StateMachine_ScheduleOperation(sm, min_component, min_cycle);
+			first_component = 0;
 		}
 	} else {
 		LogMessage("ERROR(Circuit_ScheduleForceDirected): Invalid input pointers\n", ERROR_LEVEL);
@@ -231,6 +245,7 @@ void Circuit_CalculateDistributionGraphs(circuit* self) {
 	uint8_t rsrc_idx, comp_idx, cycle_idx;
 	component* cur_comp = NULL;
 	float probability;
+	uint8_t cycle_start, cycle_end;
 	for(rsrc_idx = 0; rsrc_idx < resource_error;rsrc_idx++) {
 		for(cycle_idx=0;cycle_idx<self->latency;cycle_idx++) { //Zero out dg before calculating
 			self->distribution_graphs[rsrc_idx][cycle_idx] = 0;
@@ -238,7 +253,9 @@ void Circuit_CalculateDistributionGraphs(circuit* self) {
 		for(comp_idx=0;comp_idx < self->num_components;comp_idx++) {
 			cur_comp = self->component_list[comp_idx];
 			if(rsrc_idx == Component_GetResourceType(cur_comp)) {
-				for(cycle_idx=0;cycle_idx<self->latency;cycle_idx++) {
+				cycle_start = Component_GetTimeFrameStart(self->component_list[comp_idx]);
+				cycle_end = Component_GetTimeFrameEnd(self->component_list[comp_idx]);
+				for(cycle_idx=cycle_start;cycle_idx<=cycle_end;cycle_idx++) {
 					probability = Component_GetProbability(cur_comp, (cycle_idx+1));
 					self->distribution_graphs[rsrc_idx][cycle_idx] += probability;
 				}
@@ -250,8 +267,10 @@ void Circuit_CalculateDistributionGraphs(circuit* self) {
 float Circuit_GetDistributionGraph(circuit* self, resource_type type, uint8_t cycle) {
 	float ret_value = 0.0f;
 	uint8_t cycle_idx = cycle-1;
-	if(NULL != self && cycle > 0 && cycle <= self->latency) {
-		ret_value = self->distribution_graphs[type][cycle_idx];
+	if(NULL != self && cycle > 0) {
+		if(cycle <= self->latency) {
+			ret_value = self->distribution_graphs[type][cycle_idx];
+		}
 	} else {
 		LogMessage("Error(Circuit_GetDistributionGraph): Invalid Input", ERROR_LEVEL);
 	}

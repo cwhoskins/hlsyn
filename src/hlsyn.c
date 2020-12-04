@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
 
 	const uint8_t test_standard = TRUE;
-#define num_standard_cases 1
+#define num_standard_cases 7
 	const uint8_t test_latency = FALSE;
 #define num_latency_cases 6
 	const uint8_t test_if = FALSE;
