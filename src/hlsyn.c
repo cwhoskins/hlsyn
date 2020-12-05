@@ -140,7 +140,8 @@ int main(int argc, char *argv[]) {
 		Circuit_Destroy(netlist_circuit);
 		return EXIT_FAILURE;
 	}
-	// PrintStateMachine(verilog_file, netlist_circuit);
+
+	// PrintStateMachine(verilog_file, netlist_circuit, latency);
 
 
 	CloseLog();
