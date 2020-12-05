@@ -3,12 +3,14 @@
 #include "net.h"
 #include "component.h"
 #include "logger.h"
+#include "state_machine.h"
+#include "state.h"
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-void PrintStateMachine(char* file_name, circuit* circ, int latency) {
+void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int latency) {
 	if(NULL == file_name || NULL == circ) return;
 
 	FILE* fp;
@@ -28,9 +30,9 @@ void PrintStateMachine(char* file_name, circuit* circ, int latency) {
 	net* list_temp = NULL;
 	net* temp_net = NULL;
 
-
-	//state_machine* sm = StateMachine_Create(latency);
-	//state* temp_state = StateMachine_FindState(sm, NULL, init_cycle);
+	uint8_t init_cycle = 0;
+	void* cond = NULL;
+	state* curr_state = StateMachine_FindState(sm, cond, init_cycle);
 
 
 	LogMessage("MSG: Writing Circuit to file\n", MESSAGE_LEVEL);
@@ -143,11 +145,39 @@ void PrintStateMachine(char* file_name, circuit* circ, int latency) {
 
 	fputs("\n", fp);
 
-	fputs("always @(posedge clk) begin\n", fp);
-	fputs("\t if(Rst) begin\n", fp);
-	fputs("\t\t state <= 0;\n", fp);
-	fputs("\t end else begin", fp);
-	fputs("\t\t case(state)\n", fp);
+	fputs("\t always @(posedge clk) begin\n", fp);
+	fputs("\t\t if(Rst) begin\n", fp);
+	fputs("\t\t\t state <= 0;\n", fp);
+	fputs("\t\t end else begin", fp);
+	fputs("\t\t\t case(state)\n", fp);
+
+	while(curr_state != NULL) {
+		fprintf(fp, "\t\t 4'd%d: begin",curr_state->cycle);
+		if(curr_state->cycle == 0) {
+			fputs("\t\t\t\t state <= 0;", fp);
+		}
+		else if(curr_state->cycle == latency+1) {
+			fputs("\t\t\t\t Done = 1;\n", fp);
+			fputs("\t\t\t\t state <= 0;\n", fp);
+
+		}
+		else {
+			for(idx = 0; idx < curr_state->num_operations; idx++) {
+				fprintf(fp, "\t\t\t\t %s;\n", curr_state->operations[idx]);
+			}
+			fprintf(fp, "\t\t\t\t state <= %d;\n", curr_state->next_state->cycle);
+		}
+		fputs("\t\t\t end", fp);
+		curr_state = curr_state->next_state;
+	}
+	fputs("\t\t\t endcase\n", fp);
+	fputs("\t\t end\n", fp);
+	fputs("\t end\n", fp);
+	fputs("endmodule\n", fp);
+
+	fputs("\n", fp);
+
+	fputs("'default_nettype wire\n", fp);
 
 	fclose(fp);
 }
