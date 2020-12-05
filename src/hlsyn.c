@@ -136,17 +136,18 @@ int main(int argc, char *argv[]) {
 	LogMessage("hlsyn started\n\0", MESSAGE_LEVEL);
 
 	circuit* netlist_circuit = Circuit_Create();
-	sm = StateMachine_Create(latency);
+	state_machine* sm = StateMachine_Create(latency);
 	if(FAILURE == ReadNetlist(txt_file, netlist_circuit)) {
 		Circuit_Destroy(netlist_circuit);
 		return EXIT_FAILURE;
 	}
 
-	// PrintStateMachine(verilog_file, netlist_circuit, sm, ;atency);
+	PrintStateMachine(verilog_file, netlist_circuit, sm, ;atency);
 
 
 	CloseLog();
 	Circuit_Destroy(netlist_circuit);
+	StateMachine_Destroy(sm);
 
 	return EXIT_SUCCESS;
 

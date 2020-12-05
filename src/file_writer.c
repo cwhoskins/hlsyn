@@ -152,9 +152,13 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	fputs("\t\t\t case(state)\n", fp);
 
 	while(curr_state != NULL) {
-		fprintf(fp, "\t\t 4'd%d: begin",curr_state->cycle);
+		fprintf(fp, "\t\t\t 4'd%d: begin",curr_state->cycle);
 		if(curr_state->cycle == 0) {
-			fputs("\t\t\t\t state <= 0;", fp);
+			fputs("\t\t\t\t if(~Start) begin\n", fp);
+			fputs("\t\t\t\t\t state <= 0;\n", fp);
+			fputs("else", fp);
+			fputs("\t\t\t\t\t state <= 1;\n", fp);
+			fputs("\t\t\t\t end\n", fp);
 		}
 		else if(curr_state->cycle == latency+1) {
 			fputs("\t\t\t\t Done = 1;\n", fp);
