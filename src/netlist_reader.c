@@ -531,3 +531,7 @@ void ConditionStack_Pop() {
 	}
 }
 
+void ClearConditionalStack() {
+	condition_stack = NULL;
+}
+

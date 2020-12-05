@@ -18,6 +18,8 @@ uint8_t ReadNetWidth(char* word);
 net_type ReadNetType(char* word);
 net_sign ReadNetSign(char* word);
 
+void ClearConditionalStack();
+
 void TestNetlistReader();
 void TestComponentParsing();
 void TestDeclarations();

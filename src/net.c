@@ -187,6 +187,14 @@ void Net_UpdateTimeFrameEnd(net* self, uint8_t cycle) {
 	}
 }
 
+uint8_t Net_GetTimeFrameEnd(net* self) {
+	uint8_t ret_value = 0;
+	if(NULL != self) {
+		ret_value = self->cycle_assigned_alap;
+	}
+	return ret_value;
+}
+
 void Net_GetName(net* self, char* buffer) {
 	if(NULL != self) {
 		strcpy(buffer, self->name);

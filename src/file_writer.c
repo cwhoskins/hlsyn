@@ -152,27 +152,28 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	fputs("\t\t\t case(state)\n", fp);
 
 	while(curr_state != NULL) {
-		fprintf(fp, "\t\t\t 4'd%d: begin",curr_state->cycle);
-		if(curr_state->cycle == 0) {
+		uint8_t test_cycle = State_GetCycle(curr_state);
+		fprintf(fp, "\t\t\t 4'd%d: begin",test_cycle);
+		if(test_cycle == 0) {
 			fputs("\t\t\t\t if(~Start) begin\n", fp);
 			fputs("\t\t\t\t\t state <= 0;\n", fp);
 			fputs("else", fp);
 			fputs("\t\t\t\t\t state <= 1;\n", fp);
 			fputs("\t\t\t\t end\n", fp);
 		}
-		else if(curr_state->cycle == latency+1) {
+		else if(test_cycle == latency+1) {
 			fputs("\t\t\t\t Done = 1;\n", fp);
 			fputs("\t\t\t\t state <= 0;\n", fp);
 
 		}
-		else {
-			for(idx = 0; idx < curr_state->num_operations; idx++) {
-				fprintf(fp, "\t\t\t\t %s;\n", curr_state->operations[idx]);
-			}
-			fprintf(fp, "\t\t\t\t state <= %d;\n", curr_state->next_state->cycle);
-		}
-		fputs("\t\t\t end", fp);
-		curr_state = curr_state->next_state;
+//		else {
+//			for(idx = 0; idx < curr_state->num_operations; idx++) {
+//				fprintf(fp, "\t\t\t\t %s;\n", curr_state->operations[idx]);
+//			}
+//			fprintf(fp, "\t\t\t\t state <= %d;\n", curr_state->next_state->cycle);
+//		}
+//		fputs("\t\t\t end", fp);
+//		curr_state = curr_state->next_state;
 	}
 	fputs("\t\t\t endcase\n", fp);
 	fputs("\t\t end\n", fp);
