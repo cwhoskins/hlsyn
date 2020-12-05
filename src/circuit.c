@@ -10,6 +10,7 @@
 #include "component.h"
 #include "logger.h"
 #include "resource.h"
+#include "file_writer.h"
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -33,6 +34,7 @@ typedef struct struct_circuit {
 
 void Circuit_TestPrint(circuit* self);
 void Circuit_PrintDistributionGraph(circuit* self);
+
 circuit* Circuit_Create(uint8_t latency) {
 	const uint8_t max_inputs = 64;
 	const uint8_t max_nets = 128;
@@ -66,14 +68,38 @@ circuit* Circuit_Create(uint8_t latency) {
 net* Circuit_FindNet(circuit* self, char* name) {
 	uint8_t net_idx = 0;
 	net* return_net = NULL;
+	uint8_t cur_usage = 0;
 	char node_name[64];
-	while(net_idx < self->num_nets) {
-		Net_GetName(self->netlist[net_idx], node_name);
-		if(0 == strcmp(node_name, name)) {
-			return_net = self->netlist[net_idx];
-			break;
+	if(NULL != self && NULL != name) {
+		while(net_idx < self->num_nets) {
+			Net_GetName(self->netlist[net_idx], node_name);
+			if(0 == strcmp(node_name, name)) {
+				if(Net_GetUsage(self->netlist[net_idx]) > cur_usage) {
+					return_net = self->netlist[net_idx];
+					cur_usage = Net_GetUsage(self->netlist[net_idx]);
+				}
+			}
+			net_idx++;
 		}
-		net_idx++;
+	}
+	return return_net;
+}
+
+net* Circuit_FindNet_Usage(circuit* self, char* name, uint8_t usage) {
+	uint8_t net_idx = 0;
+	net* return_net = NULL;
+	char node_name[64];
+	if(NULL != self && NULL != name && usage > 0) {
+		while(net_idx < self->num_nets) {
+			Net_GetName(self->netlist[net_idx], node_name);
+			if(0 == strcmp(node_name, name)) {
+				if(Net_GetUsage(self->netlist[net_idx]) == usage) {
+					return_net = self->netlist[net_idx];
+					break;
+				}
+			}
+			net_idx++;
+		}
 	}
 	return return_net;
 }
@@ -181,10 +207,23 @@ void Circuit_ScheduleASAP(circuit* self) {
 uint8_t Circuit_ScheduleALAP(circuit* self) {
 	uint8_t idx;
 	uint8_t ret_value = SUCCESS;
+	net* cur_output = NULL;
 	for(idx = 0;idx < self->num_outputs; idx++) {
-		ret_value = Net_SchedulePathALAP(self->output_nets[idx], (self->latency+1));
+		cur_output = self->output_nets[idx];
+		ret_value = Net_SchedulePathALAP(cur_output, (self->latency+1));
 		if(FAILURE == ret_value) {
 			break;
+		}
+	}
+	if(FAILURE != ret_value) {
+		for(idx = 0;idx < self->num_nets; idx++) {
+			cur_output = self->netlist[idx];
+			if(0 == Net_GetTimeFrameEnd(cur_output)) {//Wasn't updated since net does not map to output
+				ret_value = Net_SchedulePathALAP(cur_output, (self->latency+1));
+				if(FAILURE == ret_value) {
+					break;
+				}
+			}
 		}
 	}
 	return ret_value;
@@ -231,9 +270,13 @@ void Circuit_ScheduleForceDirected(circuit* self, state_machine* sm) {
 			port output_port = Component_GetOutputPort(min_component, 0);
 			scheduled_net = output_port.port_net;
 			Net_GetName(scheduled_net, scheduled_net_name);
-			sprintf(log_msg, "MSG(Circuit_ScheduleForceDirected): %s scheduled to cycle %d with force %.2f\n", scheduled_net_name, min_cycle, min_force);
-			LogMessage(log_msg, MESSAGE_LEVEL);
-			StateMachine_ScheduleOperation(sm, min_component, min_cycle);
+			if(FALSE == Component_GetIsScheduled(min_component)) {
+				sprintf(log_msg, "MSG(Circuit_ScheduleForceDirected): %s scheduled to cycle %d with force %.2f\n", scheduled_net_name, min_cycle, min_force);
+				LogMessage(log_msg, MESSAGE_LEVEL);
+				StateMachine_ScheduleOperation(sm, min_component, min_cycle);
+			} else {
+				break;
+			}
 			first_component = 0;
 		}
 	} else {
@@ -246,7 +289,7 @@ void Circuit_CalculateDistributionGraphs(circuit* self) {
 	component* cur_comp = NULL;
 	float probability;
 	uint8_t cycle_start, cycle_end;
-	for(rsrc_idx = 0; rsrc_idx < resource_error;rsrc_idx++) {
+	for(rsrc_idx = 0; rsrc_idx < resource_none;rsrc_idx++) {
 		for(cycle_idx=0;cycle_idx<self->latency;cycle_idx++) { //Zero out dg before calculating
 			self->distribution_graphs[rsrc_idx][cycle_idx] = 0;
 		}
@@ -267,7 +310,7 @@ void Circuit_CalculateDistributionGraphs(circuit* self) {
 float Circuit_GetDistributionGraph(circuit* self, resource_type type, uint8_t cycle) {
 	float ret_value = 0.0f;
 	uint8_t cycle_idx = cycle-1;
-	if(NULL != self && cycle > 0) {
+	if(NULL != self && cycle > 0 && type < resource_none) {
 		if(cycle <= self->latency) {
 			ret_value = self->distribution_graphs[type][cycle_idx];
 		}
@@ -325,9 +368,7 @@ void Circuit_TestPrint(circuit* self) {
 void Circuit_PrintDistributionGraph(circuit* self) {
 	uint8_t idx, r_idx;
 	char line_buffer[512], cell_buffer[32];
-	char type_declaration[8];
 	FILE* fp;
-	uint8_t asap, alap;
 	if(NULL != self) {
 		fp = fopen("./test/distribution_graph.csv", "w+");
 		if(NULL == fp) {
@@ -342,7 +383,7 @@ void Circuit_PrintDistributionGraph(circuit* self) {
 		strcat(line_buffer, "\n");
 		fprintf(fp, line_buffer);
 
-		for(r_idx=resource_multiplier;r_idx<resource_error;r_idx++) {
+		for(r_idx=resource_multiplier;r_idx<resource_none;r_idx++) {
 			switch(r_idx) {
 			case resource_multiplier:
 				sprintf(line_buffer, "multiplier");

@@ -272,6 +272,21 @@ void DeclareComponent(component* self, char* line_buffer, uint8_t comp_idx) {
 			case rem_out:
 				sprintf(temp_port_declaration, ".rem(%s)", port_name);
 				break;
+			case port_if:
+				if(io_idx < Component_GetNumInputs(self))
+					sprintf(temp_port_declaration, ".if_i(%s)", port_name);
+				else
+					sprintf(temp_port_declaration, ".if_o(%s)", port_name);
+				break;
+			case port_else:
+				if(io_idx < Component_GetNumInputs(self))
+					sprintf(temp_port_declaration, ".else_i(%s)", port_name);
+				else
+					sprintf(temp_port_declaration, ".else_o(%s)", port_name);
+				break;
+			case port_prev_op:
+				sprintf(temp_port_declaration, ".prev_op(%s)", port_name);
+				break;
 			default:
 				break;
 			}
@@ -317,6 +332,9 @@ void DeclareComponent(component* self, char* line_buffer, uint8_t comp_idx) {
 			break;
 		case decrementer:
 			strcpy(type_declaration, "Dec");
+			break;
+		case component_if_else:
+			strcpy(type_declaration, "If_Else");
 			break;
 		default:
 			break;

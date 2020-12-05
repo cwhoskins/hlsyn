@@ -14,6 +14,7 @@
 
 circuit* Circuit_Create(uint8_t latency);
 net* Circuit_FindNet(circuit* self, char* name);
+net* Circuit_FindNet_Usage(circuit* self, char* name, uint8_t usage);
 component* Circuit_GetComponent(circuit* self, uint8_t idx);
 uint8_t Circuit_GetNumComponent(circuit* self);
 net* Circuit_GetNet(circuit* self, uint8_t idx);

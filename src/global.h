@@ -36,6 +36,7 @@ typedef enum enum_net_type {
 	net_input,
 	net_output,
 	net_variable,
+	net_conditional,
 	net_error
 } net_type;
 
@@ -61,8 +62,7 @@ typedef enum enum_comp_type {
 	modulo,
 	incrementer,
 	decrementer,
-	component_if,
-	component_else,
+	component_if_else,
 	component_unknown
 } component_type;
 
@@ -81,6 +81,9 @@ typedef enum {
 	prod_out,
 	quot_out,
 	rem_out,
+	port_if,
+	port_else,
+	port_prev_op,
 	port_error
 } port_type;
 
@@ -89,6 +92,7 @@ typedef enum {
 	resource_divider,
 	resource_logical,
 	resource_alu,
+	resource_none,
 	resource_error
 } resource_type;
 
@@ -99,6 +103,9 @@ typedef enum {
 	COMPONENT_DECLARATION,
 	COMMENT_DECLARATION,
 	WIDTH_DECLARATION,
+	IF_DECLARATION,
+	ELSE_DECLARATION,
+	CONDITIONAL_END,
 	WORD_ERROR
 } word_class;
 
@@ -118,9 +125,11 @@ typedef enum {
 
 typedef struct struct_transition transition;
 
+typedef struct struct_condition condition;
 typedef struct struct_condition {
 	transition_type type;
 	net* net_condition;
+	condition* prev_condition;
 } condition;
 
 //Circuit

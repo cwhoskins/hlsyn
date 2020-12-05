@@ -17,6 +17,7 @@ typedef struct struct_net {
 	net_type type;
 	char name[64];
 	uint8_t width;
+	uint8_t usage;
 	uint8_t is_scheduled;
 	net_sign sign;
 	component* driver;
@@ -35,6 +36,7 @@ net* Net_Create(char* name, net_type type, net_sign sign, uint8_t width) {
 	net* new_net = (net*) malloc(sizeof(net));
 	if(NULL != new_net) {
 		strcpy(new_net->name, name);
+		new_net->usage = 1;
 		new_net->type = type;
 		new_net->sign = sign;
 		new_net->width = width;
@@ -58,6 +60,20 @@ void Net_ResetDelay(net* self) {
 		LogMessage(log_msg, MESSAGE_LEVEL);
 		self->delay_ns = -1.0f;
 	}
+}
+
+void Net_SetUsage(net* self, uint8_t new_usage) {
+	if(NULL != self) {
+		self->usage = new_usage;
+	}
+}
+
+uint8_t Net_GetUsage(net* self) {
+	uint8_t usage = 0;
+	if(NULL != self) {
+		usage = self->usage;
+	}
+	return usage;
 }
 
 void Net_UpdatePathDelay(net* self, float path_delay_ns) {
@@ -208,6 +224,14 @@ uint8_t Net_GetWidth(net* self) {
 		cur_width = self->width;
 	}
 	return cur_width;
+}
+
+component* Net_GetDriver(net* self) {
+	component* ret_value = NULL;
+	if(NULL != self) {
+		ret_value = self->driver;
+	}
+	return ret_value;
 }
 
 void Net_AddDriver(net* self, component* new_driver) {

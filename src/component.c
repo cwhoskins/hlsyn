@@ -67,6 +67,10 @@ component* Component_Create(component_type type) {
 				} else if(mux2x1 == type || comparator == type || shift_left == type || shift_right == type) {
 					new_component->resource_class = resource_logical;
 					new_component->delay_cycle = LOGICAL_CYCLE_DELAY;
+				} else if(component_if_else == type) {
+					new_component->is_scheduled = TRUE;
+					new_component->resource_class = resource_none;
+					new_component->delay_cycle = 1;
 				}
 			}
 		}
@@ -116,13 +120,14 @@ void Component_SchedulePathASAP(component* self, uint8_t cycle) {
 }
 
 uint8_t Component_SchedulePathALAP(component* self, uint8_t cycle) {
-	uint8_t ret_value = FAILURE;
+	uint8_t ret_value = SUCCESS;
 	uint8_t input_idx;
 	char log_msg[128];
 	if(NULL != self) {
 		uint8_t cycle_started = cycle - self->delay_cycle;
 		if(cycle <= self->delay_cycle) {
 			LogMessage("Error(Component_SchedulePathALAP): Circuit cannot meet latency\n", CIRCUIT_ERROR_LEVEL);
+			ret_value = FAILURE;
 		} else if(cycle_started < self->cycle_started_alap){
 			self->cycle_started_alap = cycle_started;
 			self->time_frame[1] = self->cycle_started_alap;

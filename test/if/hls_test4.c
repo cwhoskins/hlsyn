@@ -1,20 +1,24 @@
-input Int32 a, b, c, zero, one
-input Int1 t
+input Int32 a, b, c, one
 output Int32 z, x
 
-variable Int32 e, g, d, f
+variable Int32 d, e, f, g, h 
+variable Int1 dLTe, dEQe, dLTEe
 
 d = a + b
+e = a + c
+f = a - b  
+dEQe = d == e
+dLTe = d > e
+dLTEe = dEQe + dLTe
 
-if ( t ) {
-   d = a - one
-   f = a + c
-   x = f - d
+if ( dLTEe ) {
+
+	if ( dLTe ) {
+		g = e + one
+		h = f + one
+	}
+	g = d + e
+	h = f + e
 }
-else {
-	e = a + c
-	g = d > e
-	z = g ? d : e
-	f = a * c
-	x = f - d  
-}
+x = h << one
+z = h >> one
