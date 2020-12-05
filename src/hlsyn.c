@@ -25,11 +25,11 @@ int main(int argc, char *argv[]) {
 #if DEBUG_MODE == 1
 
 
-	const uint8_t test_standard = FALSE;
+	const uint8_t test_standard = TRUE;
 #define num_standard_cases 7
 	const uint8_t test_latency = FALSE;
 #define num_latency_cases 6
-	const uint8_t test_if = TRUE;
+	const uint8_t test_if = FALSE;
 #define num_if_cases 4
 	const uint8_t test_error = FALSE;
 #define num_error_cases 3
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
 				Circuit_ScheduleForceDirected(netlist_circuit, sm);
-				//PrintStateMachine(verilog_file, sm);
+				PrintStateMachine(verilog_file, netlist_circuit, sm);
 			} else {
 				break;
 			}
@@ -82,9 +82,9 @@ int main(int argc, char *argv[]) {
 
 	if(TRUE == test_if) {
 		uint8_t latency[num_if_cases] = {4, 4, 8, 4};
-		for(idx = 2; idx <= 2/*num_if_cases*/; idx++) {
-			netlist_circuit = Circuit_Create(latency[idx-1]);
-			sm = StateMachine_Create(latency[idx-1]);
+		for(idx = 1; idx <= num_if_cases; idx++) {
+			netlist_circuit = Circuit_Create(latency[idx]);
+			sm = StateMachine_Create(latency[idx]);
 			sprintf(c_file, "./test/if/hls_test%d.c", idx);
 			sprintf(verilog_file, "./test/outputs/if%d.v", idx);
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
@@ -136,15 +136,18 @@ int main(int argc, char *argv[]) {
 	LogMessage("hlsyn started\n\0", MESSAGE_LEVEL);
 
 	circuit* netlist_circuit = Circuit_Create();
+	state_machine* sm = StateMachine_Create(latency);
 	if(FAILURE == ReadNetlist(txt_file, netlist_circuit)) {
 		Circuit_Destroy(netlist_circuit);
 		return EXIT_FAILURE;
 	}
-	// PrintStateMachine(verilog_file, netlist_circuit);
+
+	PrintStateMachine(verilog_file, netlist_circuit, sm, ;atency);
 
 
 	CloseLog();
 	Circuit_Destroy(netlist_circuit);
+	StateMachine_Destroy(sm);
 
 	return EXIT_SUCCESS;
 

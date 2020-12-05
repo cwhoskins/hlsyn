@@ -3,18 +3,19 @@
 #include "net.h"
 #include "component.h"
 #include "logger.h"
+#include "state_machine.h"
+#include "state.h"
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-void PrintStateMachine(char* file_name, circuit* circ) {
+void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int latency) {
 	if(NULL == file_name || NULL == circ) return;
 
 	FILE* fp;
 	uint8_t idx;
 	uint8_t num_nets = Circuit_GetNumNet(circ);
-	uint8_t num_comps = Circuit_GetNumComponent(circ);
 	uint8_t num_ins = 0;
 	uint8_t num_outs = 0;
 	uint8_t num_vars = 0;
@@ -28,7 +29,11 @@ void PrintStateMachine(char* file_name, circuit* circ) {
 	char line_buffer[512];
 	net* list_temp = NULL;
 	net* temp_net = NULL;
-	component* temp_comp = NULL;
+
+	uint8_t init_cycle = 0;
+	void* cond = NULL;
+	state* curr_state = StateMachine_FindState(sm, cond, init_cycle);
+
 
 	LogMessage("MSG: Writing Circuit to file\n", MESSAGE_LEVEL);
 
@@ -96,7 +101,7 @@ void PrintStateMachine(char* file_name, circuit* circ) {
 		}
 	}
 
-	fputs("\n", fp); // Spacing between inputs and outputs
+	fputs("\n", fp);
 
 	// List outputs
 	fputs("\tDone;\n", fp);
@@ -117,7 +122,7 @@ void PrintStateMachine(char* file_name, circuit* circ) {
 		}
 	}
 
-	fputs("\n", fp); // Spacing between I/O and internal nets
+	fputs("\n", fp);
 
 	// List variables
 	LogMessage("MSG: Writing internal nets\n", MESSAGE_LEVEL);
@@ -138,10 +143,45 @@ void PrintStateMachine(char* file_name, circuit* circ) {
 		}
 	}
 
-	fputs("\n", fp); // Spacing between nets and HLSM
+	fputs("\n", fp);
+
+	fputs("\t always @(posedge clk) begin\n", fp);
+	fputs("\t\t if(Rst) begin\n", fp);
+	fputs("\t\t\t state <= 0;\n", fp);
+	fputs("\t\t end else begin", fp);
+	fputs("\t\t\t case(state)\n", fp);
+
+	while(curr_state != NULL) {
+		fprintf(fp, "\t\t\t 4'd%d: begin",curr_state->cycle);
+		if(curr_state->cycle == 0) {
+			fputs("\t\t\t\t if(~Start) begin\n", fp);
+			fputs("\t\t\t\t\t state <= 0;\n", fp);
+			fputs("else", fp);
+			fputs("\t\t\t\t\t state <= 1;\n", fp);
+			fputs("\t\t\t\t end\n", fp);
+		}
+		else if(curr_state->cycle == latency+1) {
+			fputs("\t\t\t\t Done = 1;\n", fp);
+			fputs("\t\t\t\t state <= 0;\n", fp);
+
+		}
+		else {
+			for(idx = 0; idx < curr_state->num_operations; idx++) {
+				fprintf(fp, "\t\t\t\t %s;\n", curr_state->operations[idx]);
+			}
+			fprintf(fp, "\t\t\t\t state <= %d;\n", curr_state->next_state->cycle);
+		}
+		fputs("\t\t\t end", fp);
+		curr_state = curr_state->next_state;
+	}
+	fputs("\t\t\t endcase\n", fp);
+	fputs("\t\t end\n", fp);
+	fputs("\t end\n", fp);
+	fputs("endmodule\n", fp);
 
 	fputs("\n", fp);
-	fputs("endmodule\n", fp);
+
+	fputs("'default_nettype wire\n", fp);
 
 	fclose(fp);
 }
