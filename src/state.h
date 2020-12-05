@@ -18,5 +18,7 @@ void State_AddOperation(state* self, component* operation);
 uint8_t State_GetCycle(state* self);
 state* State_GetNextState(state* self);
 void State_Destroy(state** self);
+uint8_t State_GetNumOperations(state* self);
+component* State_GetOperation(state* self, int idx);
 
 #endif /* STATE_H_ */

@@ -95,3 +95,20 @@ void State_Destroy(state** self) {
 		(*self) = NULL;
 	}
 }
+
+uint8_t State_GetNumOperations(state* self) {
+	uint8_t ret_value = 0;
+	if(NULL != self) {
+		ret_value = self->num_operations;
+	}
+	return ret_value;
+}
+
+component* State_GetOperation(state* self, int idx) {
+	component* ret_value;
+	if(NULL != self) {
+		ret_value = self->operations[idx];
+	}
+
+	return ret_value;
+}
