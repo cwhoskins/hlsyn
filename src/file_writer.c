@@ -8,17 +8,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void PrintStateMachine(char* file_name, circuit* circ, int* latency) {
+void PrintStateMachine(char* file_name, circuit* circ, int latency) {
 	if(NULL == file_name || NULL == circ) return;
 
 	FILE* fp;
 	uint8_t idx;
 	uint8_t num_nets = Circuit_GetNumNet(circ);
-	uint8_t num_comps = Circuit_GetNumComponent(circ);
 	uint8_t num_ins = 0;
 	uint8_t num_outs = 0;
 	uint8_t num_vars = 0;
-	uint8_t init_cycle = 0;
 	int print_return;
 
 	char log_msg[128];
@@ -31,8 +29,8 @@ void PrintStateMachine(char* file_name, circuit* circ, int* latency) {
 	net* temp_net = NULL;
 
 
-	state_machine* sm = StateMachine_Create(latency);
-	state* temp_state = StateMachine_FindState(sm, NULL, init_cycle);
+	//state_machine* sm = StateMachine_Create(latency);
+	//state* temp_state = StateMachine_FindState(sm, NULL, init_cycle);
 
 
 	LogMessage("MSG: Writing Circuit to file\n", MESSAGE_LEVEL);
@@ -150,16 +148,6 @@ void PrintStateMachine(char* file_name, circuit* circ, int* latency) {
 	fputs("\t\t state <= 0;\n", fp);
 	fputs("\t end else begin", fp);
 	fputs("\t\t case(state)\n", fp);
-	while(NULL != temp_state) {
-		fprintf(fp, "\t\t 4'd%d: begin\n", temp_state->cycle);
-		for(idx = 0; idx < temp_state->operations; idx++) {
-			fprintf(fp, "\t\t\t %s;", temp_state->operations[idx]);
-		}
-		temp_state = temp_state->next_state;
-	}
-
-	fputs("\n", fp);
-	fputs("endmodule\n", fp);
 
 	fclose(fp);
 }

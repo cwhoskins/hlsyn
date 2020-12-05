@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
 				Circuit_ScheduleForceDirected(netlist_circuit, sm);
-				PrintStateMachine(verilog_file, sm);
+				//PrintStateMachine(verilog_file, netlist_circuit, latency[idx]);
 			} else {
 				break;
 			}
