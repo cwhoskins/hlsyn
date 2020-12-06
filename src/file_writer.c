@@ -1,22 +1,20 @@
-#include "global.h"
 #include "file_writer.h"
 #include "circuit.h"
 #include "net.h"
 #include "component.h"
 #include "logger.h"
-#include "state_machine.h"
-#include "state.h"
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int latency) {
+void PrintStateMachine(char* file_name, circuit* circ) {
 	if(NULL == file_name || NULL == circ) return;
 
 	FILE* fp;
 	uint8_t idx;
 	uint8_t num_nets = Circuit_GetNumNet(circ);
+	uint8_t num_comps = Circuit_GetNumComponent(circ);
 	uint8_t num_ins = 0;
 	uint8_t num_outs = 0;
 	uint8_t num_vars = 0;
@@ -30,15 +28,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	char line_buffer[512];
 	net* list_temp = NULL;
 	net* temp_net = NULL;
-
-	uint8_t init_cycle = 0;
-	int curr_cycle;
-	int next_cycle;
-	void* cond = NULL;
-	state* curr_state = StateMachine_FindState(sm, cond, init_cycle);
-	uint8_t num_ops;
-	component* curr_op;
-
+	component* temp_comp = NULL;
 
 	LogMessage("MSG: Writing Circuit to file\n", MESSAGE_LEVEL);
 
@@ -150,51 +140,25 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 
 	fputs("\n", fp);
 
-	fputs("\t always @(posedge clk) begin\n", fp);
-	fputs("\t\t if(Rst) begin\n", fp);
-	fputs("\t\t\t state <= 0;\n", fp);
-	fputs("\t\t end else begin", fp);
-	fputs("\t\t\t case(state)\n", fp);
+	// HLSM
 
-	while(curr_state != NULL) {
+	// always@(posedge clk) begin
+	// 		if(~start)
+	//			state <= 0;
+	//		end else begin
+	// HLSM
 
-		curr_cycle = State_GetCycle(curr_state);
-		next_cycle = State_GetCycle(State_GetNextState(curr_state));
-		fprintf(fp, "\t\t\t 4'd%d: begin", curr_cycle);
-		if(curr_cycle == 0) {
 
-			fputs("\t\t\t\t if(~Start) begin\n", fp);
-			fputs("\t\t\t\t\t state <= 0;\n", fp);
-			fputs("\t\t\t\t else", fp);
-			fputs("\t\t\t\t\t state <= 1;\n", fp);
-			fputs("\t\t\t\t end\n", fp);
-		}
-		else if(curr_cycle == latency+1) {
-			fputs("\t\t\t\t Done = 1;\n", fp);
-			fputs("\t\t\t\t state <= 0;\n", fp);
-
-		}
-
-		else {
-			num_ops = State_GetNumOperations(curr_state);
-			for(idx = 0; idx < num_ops; idx++) {
-				curr_op = State_GetOperation(curr_state, idx);
-				fprintf(fp, "\t\t\t\t %s", curr_op);
-			}
-			fprintf(fp, "\t\t\t\t state <= %d;\n", next_cycle);
-		}
-		fputs("\t\t\t end", fp);
-		curr_state = State_GetNextState(curr_state);
-
-	}
-	fputs("\t\t\t endcase\n", fp);
-	fputs("\t\t end\n", fp);
-	fputs("\t end\n", fp);
-	fputs("endmodule\n", fp);
+	// 		final state: begin
+	// 			Done = 1;
+	// 			state <= 0; (go to wait)
+	// 			end
+	// 			endcase
+	// 		end
+	// end
 
 	fputs("\n", fp);
-
-	fputs("'default_nettype wire\n", fp);
+	fputs("endmodule\n", fp);
 
 	fclose(fp);
 }
@@ -325,21 +289,6 @@ void DeclareComponent(component* self, char* line_buffer, uint8_t comp_idx) {
 			case rem_out:
 				sprintf(temp_port_declaration, ".rem(%s)", port_name);
 				break;
-			case port_if:
-				if(io_idx < Component_GetNumInputs(self))
-					sprintf(temp_port_declaration, ".if_i(%s)", port_name);
-				else
-					sprintf(temp_port_declaration, ".if_o(%s)", port_name);
-				break;
-			case port_else:
-				if(io_idx < Component_GetNumInputs(self))
-					sprintf(temp_port_declaration, ".else_i(%s)", port_name);
-				else
-					sprintf(temp_port_declaration, ".else_o(%s)", port_name);
-				break;
-			case port_prev_op:
-				sprintf(temp_port_declaration, ".prev_op(%s)", port_name);
-				break;
 			default:
 				break;
 			}
@@ -385,9 +334,6 @@ void DeclareComponent(component* self, char* line_buffer, uint8_t comp_idx) {
 			break;
 		case decrementer:
 			strcpy(type_declaration, "Dec");
-			break;
-		case component_if_else:
-			strcpy(type_declaration, "If_Else");
 			break;
 		default:
 			break;

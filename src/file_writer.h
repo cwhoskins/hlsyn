@@ -3,7 +3,7 @@
 
 #include "global.h"
 
-void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int latency);
+void PrintStateMachine(char* file_name, circuit* circ);
 void DeclareNet(net* self, char* line_buffer);
 void DeclareComponent(component* self, char* line_buffer, uint8_t comp_idx);
 void TestComponentDeclaration();
