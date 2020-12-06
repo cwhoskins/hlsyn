@@ -27,7 +27,7 @@
 #define MULTIPLIER_CYCLE_DELAY 2
 #define LOGICAL_CYCLE_DELAY 1
 
-#define DEBUG_MODE 1
+#define DEBUG_MODE 0
 
 //Net
 typedef enum enum_net_type {

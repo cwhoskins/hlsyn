@@ -19,8 +19,9 @@
 
 int main(int argc, char *argv[]) {
 
-	char c_file[64];
-	char verilog_file[64];
+	char* c_file = NULL;
+	char* verilog_file = NULL;
+	int laten;
 
 #if DEBUG_MODE == 1
 
@@ -55,7 +56,7 @@ int main(int argc, char *argv[]) {
 
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
 				Circuit_ScheduleForceDirected(netlist_circuit, sm);
-				//PrintStateMachine(verilog_file, netlist_circuit, sm);
+				PrintStateMachine(verilog_file, netlist_circuit, sm, latency[idx]);
 			} else {
 				break;
 			}
@@ -128,7 +129,7 @@ int main(int argc, char *argv[]) {
 	}
 	else {
 		c_file = argv[1];
-		latency = argv[2];
+		laten = argv[2];
 		verilog_file = argv[3];
 	}
 
@@ -136,14 +137,14 @@ int main(int argc, char *argv[]) {
 	SetLogLevel(CIRCUIT_ERROR_LEVEL);
 	LogMessage("hlsyn started\n\0", MESSAGE_LEVEL);
 
-	circuit* netlist_circuit = Circuit_Create();
-	state_machine* sm = StateMachine_Create(latency);
-	if(FAILURE == ReadNetlist(txt_file, netlist_circuit)) {
+	circuit* netlist_circuit = Circuit_Create(laten);
+	state_machine* sm = StateMachine_Create(laten);
+	if(FAILURE == ReadNetlist(c_file, netlist_circuit)) {
 		Circuit_Destroy(netlist_circuit);
 		return EXIT_FAILURE;
 	}
 
-	PrintStateMachine(verilog_file, netlist_circuit, sm, ;atency);
+	PrintStateMachine(verilog_file, netlist_circuit, sm, laten);
 
 
 	CloseLog();

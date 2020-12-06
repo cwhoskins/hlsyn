@@ -1,3 +1,4 @@
+#include "global.h"
 #include "file_writer.h"
 #include "circuit.h"
 #include "net.h"
@@ -31,8 +32,12 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	net* temp_net = NULL;
 
 	uint8_t init_cycle = 0;
+	int curr_cycle;
+	int next_cycle;
 	void* cond = NULL;
 	state* curr_state = StateMachine_FindState(sm, cond, init_cycle);
+	uint8_t num_ops;
+	component* curr_op;
 
 
 	LogMessage("MSG: Writing Circuit to file\n", MESSAGE_LEVEL);
@@ -152,28 +157,35 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	fputs("\t\t\t case(state)\n", fp);
 
 	while(curr_state != NULL) {
-		uint8_t test_cycle = State_GetCycle(curr_state);
-		fprintf(fp, "\t\t\t 4'd%d: begin",test_cycle);
-		if(test_cycle == 0) {
+
+		curr_cycle = State_GetCycle(curr_state);
+		next_cycle = State_GetCycle(State_GetNextState(curr_state));
+		fprintf(fp, "\t\t\t 4'd%d: begin", curr_cycle);
+		if(curr_cycle == 0) {
+
 			fputs("\t\t\t\t if(~Start) begin\n", fp);
 			fputs("\t\t\t\t\t state <= 0;\n", fp);
-			fputs("else", fp);
+			fputs("\t\t\t\t else", fp);
 			fputs("\t\t\t\t\t state <= 1;\n", fp);
 			fputs("\t\t\t\t end\n", fp);
 		}
-		else if(test_cycle == latency+1) {
+		else if(curr_cycle == latency+1) {
 			fputs("\t\t\t\t Done = 1;\n", fp);
 			fputs("\t\t\t\t state <= 0;\n", fp);
 
 		}
-//		else {
-//			for(idx = 0; idx < curr_state->num_operations; idx++) {
-//				fprintf(fp, "\t\t\t\t %s;\n", curr_state->operations[idx]);
-//			}
-//			fprintf(fp, "\t\t\t\t state <= %d;\n", curr_state->next_state->cycle);
-//		}
-//		fputs("\t\t\t end", fp);
-//		curr_state = curr_state->next_state;
+
+		else {
+			num_ops = State_GetNumOperations(curr_state);
+			for(idx = 0; idx < num_ops; idx++) {
+				curr_op = State_GetOperation(curr_state, idx);
+				fprintf(fp, "\t\t\t\t %s", curr_op);
+			}
+			fprintf(fp, "\t\t\t\t state <= %d;\n", next_cycle);
+		}
+		fputs("\t\t\t end", fp);
+		curr_state = State_GetNextState(curr_state);
+
 	}
 	fputs("\t\t\t endcase\n", fp);
 	fputs("\t\t end\n", fp);
