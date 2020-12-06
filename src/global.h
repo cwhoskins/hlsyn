@@ -27,7 +27,7 @@
 #define MULTIPLIER_CYCLE_DELAY 2
 #define LOGICAL_CYCLE_DELAY 1
 
-#define DEBUG_MODE 0
+#define DEBUG_MODE 1
 
 //Net
 typedef enum enum_net_type {
@@ -36,7 +36,6 @@ typedef enum enum_net_type {
 	net_input,
 	net_output,
 	net_variable,
-	net_conditional,
 	net_error
 } net_type;
 
@@ -92,7 +91,6 @@ typedef enum {
 	resource_divider,
 	resource_logical,
 	resource_alu,
-	resource_none,
 	resource_error
 } resource_type;
 
@@ -103,9 +101,6 @@ typedef enum {
 	COMPONENT_DECLARATION,
 	COMMENT_DECLARATION,
 	WIDTH_DECLARATION,
-	IF_DECLARATION,
-	ELSE_DECLARATION,
-	CONDITIONAL_END,
 	WORD_ERROR
 } word_class;
 
@@ -125,11 +120,9 @@ typedef enum {
 
 typedef struct struct_transition transition;
 
-typedef struct struct_condition condition;
 typedef struct struct_condition {
 	transition_type type;
 	net* net_condition;
-	condition* prev_condition;
 } condition;
 
 //Circuit

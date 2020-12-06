@@ -14,7 +14,6 @@
 
 circuit* Circuit_Create(uint8_t latency);
 net* Circuit_FindNet(circuit* self, char* name);
-net* Circuit_FindNet_Usage(circuit* self, char* name, uint8_t usage);
 component* Circuit_GetComponent(circuit* self, uint8_t idx);
 uint8_t Circuit_GetNumComponent(circuit* self);
 net* Circuit_GetNet(circuit* self, uint8_t idx);
@@ -32,7 +31,6 @@ uint8_t Circuit_ScheduleALAP(circuit* self);
 void Circuit_ScheduleASAP(circuit* self);
 void Circuit_ScheduleForceDirected(circuit* self, state_machine* sm);
 void Circuit_ScheduleOperation(circuit* self, component* operation, uint8_t cycle);
-void Circuit_ScheduleConditionals(circuit* self, state_machine* sm);
 void Circuit_AddResource(circuit* self, resource* new_resource);
 
 #endif /* CIRCUIT_H_ */
