@@ -33,6 +33,7 @@ typedef struct struct_circuit {
 } circuit;
 
 void Circuit_TestPrint(circuit* self);
+void Circuit_PrintForceSchedule(circuit* self);
 void Circuit_PrintDistributionGraph(circuit* self);
 
 circuit* Circuit_Create(uint8_t latency) {
@@ -279,8 +280,25 @@ void Circuit_ScheduleForceDirected(circuit* self, state_machine* sm) {
 			}
 			first_component = 0;
 		}
+		Circuit_ScheduleConditionals(self, sm);
+		Circuit_PrintForceSchedule(self);
 	} else {
 		LogMessage("ERROR(Circuit_ScheduleForceDirected): Invalid input pointers\n", ERROR_LEVEL);
+	}
+}
+
+void Circuit_ScheduleConditionals(circuit* self, state_machine* sm) {
+	uint8_t comp_idx, port_idx;
+	component* cur_component;
+	for(comp_idx = 0; comp_idx < self->num_components; comp_idx++) {
+		cur_component = self->component_list[comp_idx];
+		if(component_if_else == Component_GetType(cur_component)) {
+			if(Component_GetTimeFrameStart(cur_component) != Component_GetTimeFrameEnd(cur_component)) {
+				LogMessage("MSG(Circuit_ScheduleConditionals): Could not schedule conditional\n", ERROR_LEVEL);
+			} else {
+				StateMachine_ScheduleOperation(sm, cur_component, Component_GetTimeFrameEnd(cur_component));
+			}
+		}
 	}
 }
 
@@ -360,6 +378,27 @@ void Circuit_TestPrint(circuit* self) {
 			asap = Component_GetTimeFrameStart(self->component_list[idx]);
 			alap = Component_GetTimeFrameEnd(self->component_list[idx]);
 			fprintf(fp, "%s\tASAP: %d\n\tALAP: %d\n\n", line_buffer, asap, alap);
+		}
+		fclose(fp);
+	}
+}
+
+void Circuit_PrintForceSchedule(circuit* self) {
+	uint8_t idx;
+	char line_buffer[512];
+	char type_declaration[8];
+	FILE* fp;
+	uint8_t cycle;
+	if(NULL != self) {
+		fp = fopen("./test/fds.txt", "w+");
+		if(NULL == fp) {
+			LogMessage("Error: Cannot open output file\n", ERROR_LEVEL);
+			return;
+		}
+		for(idx=0;idx<self->num_components;idx++) {
+			DeclareComponent(self->component_list[idx], line_buffer, idx);
+			cycle = Component_GetTimeFrameStart(self->component_list[idx]);
+			fprintf(fp, "%s\n\tCycle: %d\n\n", line_buffer, cycle);
 		}
 		fclose(fp);
 	}

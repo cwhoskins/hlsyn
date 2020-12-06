@@ -157,10 +157,12 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	fputs("\t\t\t case(state)\n", fp);
 
 	while(curr_state != NULL) {
+
 		curr_cycle = State_GetCycle(curr_state);
 		next_cycle = State_GetCycle(State_GetNextState(curr_state));
 		fprintf(fp, "\t\t\t 4'd%d: begin", curr_cycle);
 		if(curr_cycle == 0) {
+
 			fputs("\t\t\t\t if(~Start) begin\n", fp);
 			fputs("\t\t\t\t\t state <= 0;\n", fp);
 			fputs("\t\t\t\t else", fp);
@@ -172,6 +174,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 			fputs("\t\t\t\t state <= 0;\n", fp);
 
 		}
+
 		else {
 			num_ops = State_GetNumOperations(curr_state);
 			for(idx = 0; idx < num_ops; idx++) {
@@ -182,6 +185,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 		}
 		fputs("\t\t\t end", fp);
 		curr_state = State_GetNextState(curr_state);
+
 	}
 	fputs("\t\t\t endcase\n", fp);
 	fputs("\t\t end\n", fp);

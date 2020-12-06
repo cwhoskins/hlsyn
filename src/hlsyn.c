@@ -26,11 +26,11 @@ int main(int argc, char *argv[]) {
 #if DEBUG_MODE == 1
 
 
-	const uint8_t test_standard = TRUE;
+	const uint8_t test_standard = FALSE;
 #define num_standard_cases 7
 	const uint8_t test_latency = FALSE;
 #define num_latency_cases 6
-	const uint8_t test_if = FALSE;
+	const uint8_t test_if = TRUE;
 #define num_if_cases 4
 	const uint8_t test_error = FALSE;
 #define num_error_cases 3
@@ -88,6 +88,7 @@ int main(int argc, char *argv[]) {
 			sm = StateMachine_Create(latency[idx]);
 			sprintf(c_file, "./test/if/hls_test%d.c", idx);
 			sprintf(verilog_file, "./test/outputs/if%d.v", idx);
+			ClearConditionalStack();
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
 				Circuit_ScheduleForceDirected(netlist_circuit, sm);
 
