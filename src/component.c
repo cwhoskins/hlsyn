@@ -2,7 +2,7 @@
  * component.c
  *
  *  Created on: Oct 20, 2020
- *      Author: cwhos
+ *      Author: Charles Hoskins
  */
 #include <stdio.h>
 #include <stdlib.h>

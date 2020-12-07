@@ -2,7 +2,7 @@
  * circuit.c
  *
  *  Created on: Oct 20, 2020
- *      Author: cwhos
+ *      Author: Charles Hoskins
  */
 
 #include "circuit.h"

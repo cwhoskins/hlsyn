@@ -2,7 +2,7 @@
  * state.c
  *
  *  Created on: Nov 28, 2020
- *      Author: cwhos
+ *      Author: Charles Hoskins
  */
 
 #include <stdlib.h>

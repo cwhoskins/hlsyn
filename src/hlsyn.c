@@ -1,10 +1,10 @@
 /*
  ============================================================================
  Name        : hlsyn.c
- Author      : 
+ Author      : Charles Hoskins
  Version     :
  Copyright   : Your copyright notice
- Description : Hello World in C, Ansi-style
+ Description : High level synthesis project
  ============================================================================
  */
 

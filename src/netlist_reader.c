@@ -2,7 +2,7 @@
  * netlist_reader.c
  *
  *  Created on: Oct 18, 2020
- *      Author: cwhos
+ *      Author: Charles Hoskins
  */
 
 #include "netlist_reader.h"

@@ -2,7 +2,7 @@
  * netlist_reader.h
  *
  *  Created on: Oct 18, 2020
- *      Author: cwhos
+ *      Author: Charles Hoskins
  */
 
 #ifndef NETLIST_READER_H_

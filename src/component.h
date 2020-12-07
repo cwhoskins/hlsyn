@@ -2,7 +2,7 @@
  * component.h
  *
  *  Created on: Oct 17, 2020
- *      Author: cwhos
+ *      Author: Charles Hoskins
  */
 
 #ifndef COMPONENT_H_

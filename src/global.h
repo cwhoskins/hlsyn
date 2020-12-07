@@ -2,7 +2,7 @@
  * global.h
  *
  *  Created on: Oct 20, 2020
- *      Author: cwhos
+ *      Author: Charles Hoskins
  */
 
 #ifndef GLOBAL_H_

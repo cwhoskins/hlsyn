@@ -2,7 +2,7 @@
  * state_machine.h
  *
  *  Created on: Nov 28, 2020
- *      Author: cwhos
+ *      Author: Charles Hoskins
  */
 
 #ifndef STATE_MACHINE_H_

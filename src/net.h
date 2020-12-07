@@ -2,7 +2,7 @@
  * net.h
  *
  *  Created on: Oct 17, 2020
- *      Author: cwhos
+ *      Author: Charles Hoskins
  */
 
 #ifndef NET_H_
