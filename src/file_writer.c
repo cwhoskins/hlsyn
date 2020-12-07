@@ -34,8 +34,9 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	uint8_t init_cycle = 0;
 	int curr_cycle;
 	int next_cycle;
-	void* cond = NULL;
-	state* curr_state = StateMachine_FindState(sm, cond, init_cycle);
+	void* cond = 0;
+	state* curr_state;
+	state* init_state = StateMachine_FindState(sm, cond, init_cycle);
 	uint8_t num_ops;
 	component* curr_op;
 
@@ -57,6 +58,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 			Net_GetName(list_temp, net_name);
 			strcat(net_name, format);
 			strcat(in_list, net_name);
+			num_ins++;
 		}
 		else if(net_input != Net_GetType(list_temp) && net_output != Net_GetType(list_temp)) {
 			num_vars++;
@@ -81,6 +83,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 
 	fputs("'timescale 1ns/1ps\n", fp);
 	fputs("'default_nettype none\n", fp);
+	fputs("\n", fp);
 	fprintf(fp, "module HLSM(Clk, Rst, Start, %sDone, %s);\n", in_list, out_list);
 	fputs("\n", fp);
 	fputs("localparam OUTPUT_WIDTH = 2*DATA_WIDTH;\n", fp);
@@ -109,7 +112,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	fputs("\n", fp);
 
 	// List outputs
-	fputs("\tDone;\n", fp);
+	fputs("\toutput Done;\n", fp);
 	for(idx = 0; idx < num_nets; idx++) {
 		temp_net = Circuit_GetNet(circ, idx);
 		if(NULL == temp_net) {
@@ -137,7 +140,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 			LogMessage("Error: Could not retrieve net\n", ERROR_LEVEL);
 			break;
 		}
-		else if(net_input != Net_GetType(list_temp) && net_output != Net_GetType(list_temp)) {
+		else if(net_input != Net_GetType(temp_net) && net_output != Net_GetType(temp_net)) {
 			DeclareNet(temp_net, line_buffer);
 			print_return = fprintf(fp, line_buffer);
 			if(0 >= print_return) {
@@ -153,19 +156,20 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	fputs("\t always @(posedge clk) begin\n", fp);
 	fputs("\t\t if(Rst) begin\n", fp);
 	fputs("\t\t\t state <= 0;\n", fp);
-	fputs("\t\t end else begin", fp);
+	fputs("\t\t end else begin\n", fp);
 	fputs("\t\t\t case(state)\n", fp);
 
+	curr_state = init_state;
 	while(curr_state != NULL) {
 
 		curr_cycle = State_GetCycle(curr_state);
 		next_cycle = State_GetCycle(State_GetNextState(curr_state));
-		fprintf(fp, "\t\t\t 4'd%d: begin", curr_cycle);
+		fprintf(fp, "\t\t\t 4'd%d: begin\n", curr_cycle);
 		if(curr_cycle == 0) {
 
 			fputs("\t\t\t\t if(~Start) begin\n", fp);
 			fputs("\t\t\t\t\t state <= 0;\n", fp);
-			fputs("\t\t\t\t else", fp);
+			fputs("\t\t\t\t else\n", fp);
 			fputs("\t\t\t\t\t state <= 1;\n", fp);
 			fputs("\t\t\t\t end\n", fp);
 		}
@@ -179,11 +183,12 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 			num_ops = State_GetNumOperations(curr_state);
 			for(idx = 0; idx < num_ops; idx++) {
 				curr_op = State_GetOperation(curr_state, idx);
-				fprintf(fp, "\t\t\t\t %s", Component_PrintOperation(curr_op, idx));
+				fprintf(fp, "\t\t\t\t %s\n", Component_PrintOperation(curr_op, idx));
+				free(Component_PrintOperation(curr_op, idx));
 			}
 			fprintf(fp, "\t\t\t\t state <= %d;\n", next_cycle);
 		}
-		fputs("\t\t\t end", fp);
+		fputs("\t\t\t end\n", fp);
 		curr_state = State_GetNextState(curr_state);
 
 	}
@@ -219,6 +224,9 @@ void DeclareNet(net* self, char* line_buffer) {
 		break;
 	case net_reg:
 		strcpy(net_type_keyword, "reg");
+		break;
+	case net_variable:
+		strcpy(net_type_keyword, "variable");
 		break;
 	default:
 		strcpy(net_type_keyword, "err");

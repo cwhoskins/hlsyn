@@ -19,11 +19,11 @@
 
 int main(int argc, char *argv[]) {
 
-	char c_file[64];
-	char verilog_file[64];
-
 #if DEBUG_MODE == 1
 
+	char c_file[64];
+	char verilog_file[64];
+	int latency;
 
 	const uint8_t test_standard = TRUE;
 #define num_standard_cases 1
@@ -117,6 +117,11 @@ int main(int argc, char *argv[]) {
 
 #else
 
+	char* c_file = NULL;
+	char* verilog_file = NULL;
+	char* lat = NULL;
+	int latency;
+
 	if(argc < 4) {
 		printf("ERROR: Not enough arguments.\n");
 		return FAILURE;
@@ -127,20 +132,22 @@ int main(int argc, char *argv[]) {
 	}
 	else {
 		c_file = argv[1];
-		latency = argv[2];
+		lat = argv[2];
 		verilog_file = argv[3];
+		latency = atoi(lat);
 	}
 
 	SetLogFile(NULL);
 	SetLogLevel(CIRCUIT_ERROR_LEVEL);
 	LogMessage("hlsyn started\n\0", MESSAGE_LEVEL);
 
-	circuit* netlist_circuit = Circuit_Create();
-	if(FAILURE == ReadNetlist(txt_file, netlist_circuit)) {
+	circuit* netlist_circuit = Circuit_Create(latency);
+	state_machine* sm = StateMachine_Create(latency);
+	if(FAILURE == ReadNetlist(c_file, netlist_circuit)) {
 		Circuit_Destroy(netlist_circuit);
 		return EXIT_FAILURE;
 	}
-	// PrintStateMachine(verilog_file, netlist_circuit);
+	PrintStateMachine(verilog_file, netlist_circuit, sm, latency);
 
 
 	CloseLog();

@@ -66,30 +66,32 @@ void StateMachine_AddState(state_machine* self, state* new_state) {
 			next_state = State_GetNextState(cur_state);
 			cur_cycle = State_GetCycle(cur_state);
 			next_cycle = State_GetCycle(next_state);
-			if(new_cycle > cur_cycle && new_cycle < next_cycle) {
+			if(new_cycle > cur_cycle && new_cycle <= next_cycle) {
 				State_AddNextState(cur_state, new_state); //Update link so that current state links to new_state
+				State_AddNextState(new_state, next_state);
+				State_AddPreviousState(new_state, cur_state);
 				State_AddPreviousState(next_state, new_state); //and next_state links back to new_state
 				break;
+			} else {
+				cur_state = next_state;
 			}
 		}
 	}
 }
 
 state* StateMachine_FindState(state_machine* self, void* conditional, uint8_t cycle) {
-	uint8_t idx;
-	state* temp_state;
-	state* ret_value = NULL;
-	if(NULL != self && NULL != conditional) {
-		for(idx = 0; idx < self->num_states;idx++) {
-			temp_state = self->state_list[idx];
-			if(cycle == State_GetCycle(temp_state)) { //Same Cycle
-//				if(conditional == State_GetConditional(temp_state)) { //Same condition
-				ret_value = temp_state;
-				break;
+	state* cur_state;
+	if(NULL != self) {
+		cur_state = self->head;
+		while(NULL != cur_state) {
+			if(cycle == State_GetCycle(cur_state)) {
+				return cur_state;
+			} else {
+				cur_state = State_GetNextState(cur_state);
 			}
 		}
 	}
-	return ret_value;
+	return NULL;
 }
 
 void StateMachine_Destroy(state_machine** self) {
@@ -105,4 +107,3 @@ void StateMachine_Destroy(state_machine** self) {
 		*self = NULL;
 	}
 }
-
