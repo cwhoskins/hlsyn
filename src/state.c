@@ -64,6 +64,7 @@ void State_AddOperation(state* self, component* operation) {
 	if(NULL != self && NULL != operation) {
 		if(max_ops > self->num_operations ) {
 			self->operations[self->num_operations] = operation;
+			Component_SchedulePathFDS(operation, self->cycle);
 			self->num_operations++;
 		} else {
 			LogMessage("ERROR(State_AddOperation): Hit max operations\n", ERROR_LEVEL);
@@ -73,7 +74,7 @@ void State_AddOperation(state* self, component* operation) {
 
 uint8_t State_GetCycle(state* self) {
 	uint8_t ret_value = 0;
-	if(NULL != self){
+	if(NULL != self) {
 		ret_value = self->cycle;
 	}
 	return ret_value;
@@ -108,5 +109,6 @@ component* State_GetOperation(state* self, int idx) {
 	if(NULL != self) {
 		ret_value = self->operations[idx];
 	}
+
 	return ret_value;
 }

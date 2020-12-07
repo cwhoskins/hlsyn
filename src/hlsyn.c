@@ -19,17 +19,18 @@
 
 int main(int argc, char *argv[]) {
 
+	char* c_file = NULL;
+	char* verilog_file = NULL;
+	int laten;
+
 #if DEBUG_MODE == 1
 
-	char c_file[64];
-	char verilog_file[64];
-	int latency;
 
-	const uint8_t test_standard = TRUE;
-#define num_standard_cases 1
+	const uint8_t test_standard = FALSE;
+#define num_standard_cases 7
 	const uint8_t test_latency = FALSE;
 #define num_latency_cases 6
-	const uint8_t test_if = FALSE;
+	const uint8_t test_if = TRUE;
 #define num_if_cases 4
 	const uint8_t test_error = FALSE;
 #define num_error_cases 3
@@ -87,6 +88,7 @@ int main(int argc, char *argv[]) {
 			sm = StateMachine_Create(latency[idx]);
 			sprintf(c_file, "./test/if/hls_test%d.c", idx);
 			sprintf(verilog_file, "./test/outputs/if%d.v", idx);
+			ClearConditionalStack();
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
 				Circuit_ScheduleForceDirected(netlist_circuit, sm);
 
@@ -116,11 +118,6 @@ int main(int argc, char *argv[]) {
 	return EXIT_SUCCESS;
 
 #else
-
-	char* c_file = NULL;
-	char* verilog_file = NULL;
-	char* lat = NULL;
-	int latency;
 
 	if(argc < 4) {
 		printf("ERROR: Not enough arguments.\n");

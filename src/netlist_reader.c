@@ -19,7 +19,13 @@
 static uint8_t ParseNetlistLine(char* line, circuit* netlist_circuit);
 static uint8_t ParseAssignmentLine(char* first_word, circuit* netlist_circuit);
 static uint8_t ParseDeclarationLine(char* first_word, circuit* netlist_circuit);
-static uint8_t BufferNet(net** reg_net, circuit* netlist_circuit);
+
+static uint8_t ParseConditionalLine(char* first_word, circuit* netlist_circuit);
+static void ConditionStack_Push(net* cond_net, transition_type type, circuit* circ);
+static void ConditionStack_Pop();
+
+component* condition_stack = NULL;
+component* prev_condition = NULL;
 
 uint8_t ReadNetlist(char* file_name, circuit* netlist_circuit) {
 
@@ -62,13 +68,54 @@ uint8_t ParseAssignmentLine(char* first_word, circuit* netlist_circuit) {
 	uint8_t net_idx = 0;
 	uint8_t ret = SUCCESS;
 	port_type output_type = datapath_out;
+	port prev_op = {.port_net = NULL, .type = port_prev_op};
 	LogMessage("MSG: Parsing Variable Assignment\n", MESSAGE_LEVEL);
 	while(NULL != word) {
 		if(1 == word_idx || 3 == word_idx || 5 == word_idx || 7 == word_idx) { //output variable
+			uint8_t port_idx;
+			uint8_t link_ops = TRUE;
+			port cur_condition = Component_GetOutputPort(condition_stack, (0));
+			component* prev_driver;
 			if(1 == word_idx) {
 				component_nets[net_idx] = Circuit_FindNet(netlist_circuit, first_word);
+				prev_driver = Net_GetDriver(component_nets[net_idx]);
+				if(NULL != prev_driver) { //Need to create new net with updated usage
+					for(port_idx=0; port_idx < Component_GetNumInputs(prev_driver); port_idx++) {
+						port cur_port = Component_GetInputPort(prev_driver, port_idx);
+						if(port_if == cur_port.type && cur_condition.port_net == cur_port.port_net) {
+							link_ops = FALSE;
+							break;
+						} else if(port_if == cur_port.type || port_else == cur_port.type) {
+							break;
+						}
+					}
+					if(TRUE == link_ops) prev_op.port_net = component_nets[net_idx];
+					net_type declare_type = Net_GetType(component_nets[net_idx]);
+					uint8_t declare_width = Net_GetWidth(component_nets[net_idx]);
+					net_sign declare_sign = Net_GetSign(component_nets[net_idx]);
+					uint8_t usage = Net_GetUsage(component_nets[net_idx]);
+					net* new_net = Net_Create(word, declare_type, declare_sign, declare_width);
+					if(NULL != new_net) {
+						Circuit_AddNet(netlist_circuit, new_net);
+						Net_SetUsage(new_net, usage+1);
+						component_nets[net_idx] = new_net;
+					}
+				}
 			} else {
 				component_nets[net_idx] = Circuit_FindNet(netlist_circuit, word);
+				port cond_port = Component_GetOutputPort(condition_stack, (Component_GetNumOutputs(condition_stack)-1));
+				//Check if previous usage is exclusive to this one
+				if(NULL != condition_stack) {
+					if(port_else == cond_port.type) {
+						prev_driver = Net_GetDriver(component_nets[net_idx]);
+						for(port_idx=0; port_idx < Component_GetNumInputs(prev_driver); port_idx++) {
+							port cur_port = Component_GetInputPort(prev_driver, port_idx);
+							if(cur_port.port_net == cur_condition.port_net) {
+								component_nets[net_idx] = Circuit_FindNet_Usage(netlist_circuit, word, (Net_GetUsage(component_nets[net_idx])-1));
+							}
+						}
+					}
+				}
 			}
 			if(NULL == component_nets[net_idx]) {
 				if(5 == word_idx && 0 == strcmp(word, "1")) {
@@ -177,6 +224,13 @@ uint8_t ParseAssignmentLine(char* first_word, circuit* netlist_circuit) {
 		default:
 			break;
 		}
+		if(NULL != condition_stack) {
+			port cur_condition = Component_GetOutputPort(condition_stack, (Component_GetNumOutputs(condition_stack)-1));
+			Component_AddInputPort(new_component, cur_condition.port_net, cur_condition.type);
+		}
+		if(NULL != prev_op.port_net) {
+			Component_AddInputPort(new_component, prev_op.port_net, prev_op.type);
+		}
 		Component_AddInputPort(new_component, component_nets[input_a_idx], datapath_a);
 		Component_AddInputPort(new_component, component_nets[input_b_idx], datapath_b);
 		if(port_error != control_type) Component_AddInputPort(new_component, component_nets[input_ctrl_idx], control_type);
@@ -234,21 +288,70 @@ uint8_t ParseDeclarationLine(char* first_word, circuit* netlist_circuit) {
 	return ret;
 }
 
+uint8_t ParseConditionalLine(char* first_word, circuit* netlist_circuit) {
+	uint8_t ret = SUCCESS;
+	uint8_t word_idx = 0;
+	transition_type type;
+	net* cond_net;
+	char* word;
+
+	if(NULL != first_word && NULL != netlist_circuit) {
+		if(0 == strcmp(first_word, "if")) {
+			type = transition_if;
+			word = strtok(NULL," ,\r\n");
+			while(NULL != word) {
+				if((0 == word_idx && 0 == strcmp(word, "(")) || (2 == word_idx && 0 == strcmp(word, ")")) || (3 == word_idx && 0 == strcmp(word, "{"))) {
+					//Do nothing (Expected)
+				} else if(1 == word_idx) {
+					cond_net = Circuit_FindNet(netlist_circuit, word);
+					if(NULL == cond_net) {
+						LogMessage("ERROR(ParseConditionalLine): Undeclared variable used\n", CIRCUIT_ERROR_LEVEL);
+						ret = FAILURE;
+						break;
+					} else {
+						ConditionStack_Push(cond_net, type, netlist_circuit);
+					}
+				} else {
+					LogMessage("ERROR(ParseConditionalLine): Invalid syntax\n", CIRCUIT_ERROR_LEVEL);
+					ret = FAILURE;
+					break;
+				}
+				word = strtok(NULL," ,\r\n");
+				word_idx++;
+			}
+		} else if(0 == strcmp(first_word, "else")) {
+			type = transition_else;
+			ConditionStack_Push(NULL, type, netlist_circuit);
+		} else {
+			LogMessage("ERROR(ParseConditionalLine): Invalid syntax\n", CIRCUIT_ERROR_LEVEL);
+			ret = FAILURE;
+		}
+	}
+	return ret;
+}
+
+
 uint8_t ParseNetlistLine(char* line, circuit* netlist_circuit) {
 
 	uint8_t ret = SUCCESS;
 	char* word;
 	word_class word_type;
+	static uint8_t queue_pop = FALSE;
+
 	if(NULL != line) {
-	   word = strtok(line," ,\r\n");
+	   word = strtok(line," ,\r\n\t");
 
 	   //First Word determines reading behavior
 	   word_type = CheckWordType(word); //Determine what type of word is (Variable, Net Declarative, Component Declarative, Width Declarative)
 	   switch(word_type) {
 	   case VARIABLE:
 		   //If var exists, assignment, otherwise error
+		   if(TRUE == queue_pop) {
+			   ConditionStack_Pop();
+			   queue_pop = FALSE;
+		   }
 		   if(NULL != Circuit_FindNet(netlist_circuit, word)) {
-			   ret = ParseAssignmentLine(line, netlist_circuit);
+			   ret = ParseAssignmentLine(word, netlist_circuit);
 		   } else {
 			   LogMessage("ERROR: Undeclared variable used\n", CIRCUIT_ERROR_LEVEL);
 			   ret = FAILURE;
@@ -260,6 +363,22 @@ uint8_t ParseNetlistLine(char* line, circuit* netlist_circuit) {
 	   case COMMENT_DECLARATION:
 		   LogMessage("MSG: Line Ignored - Comment\n", MESSAGE_LEVEL);
 		   break;
+	   case IF_DECLARATION:
+		   LogMessage("MSG: If Declaration\n", MESSAGE_LEVEL);
+		   if(TRUE == queue_pop) {
+			   ConditionStack_Pop();
+			   queue_pop = FALSE;
+		   }
+		   ret = ParseConditionalLine(word, netlist_circuit);
+		   break;
+	   case ELSE_DECLARATION:
+		   LogMessage("MSG: Else Declaration\n", MESSAGE_LEVEL);
+		   ret = ParseConditionalLine(word, netlist_circuit);
+		   queue_pop = FALSE;
+		   break;
+	   case CONDITIONAL_END:
+		   queue_pop = TRUE;
+		   break;
 	   default://Error
 		   LogMessage("ERROR: Unknown Line\n", ERROR_LEVEL);
 		   ret = FAILURE;
@@ -267,38 +386,6 @@ uint8_t ParseNetlistLine(char* line, circuit* netlist_circuit) {
 	   }
 	}
 	return ret;
-}
-
-uint8_t BufferNet(net** reg_net, circuit* netlist_circuit) {
-
-	uint8_t ret_value = SUCCESS;
-	char new_net_name[64], old_net_name[64];
-	net* buffered_net = *reg_net;
-	net* unbuffered_net = NULL;
-	component* new_reg;
-	if(NULL != buffered_net && NULL != netlist_circuit) {
-		Net_GetName(buffered_net, old_net_name);
-		strcpy(new_net_name, "reg_in_");
-		strcat(new_net_name, old_net_name);
-		unbuffered_net = Net_Create(new_net_name, net_wire, Net_GetSign(buffered_net), Net_GetWidth(buffered_net));
-		if(NULL != unbuffered_net) {
-			Circuit_AddNet(netlist_circuit, unbuffered_net);
-			new_reg =  Component_Create(load_register);
-			if(NULL != new_reg) {
-				Component_AddOutputPort(new_reg, buffered_net, reg_out);
-				Component_AddInputPort(new_reg, unbuffered_net, datapath_a);
-				Circuit_AddComponent(netlist_circuit, new_reg);
-				*reg_net = unbuffered_net;
-			} else {
-				//Error
-				ret_value = FAILURE;
-			}
-		} else {
-			//Error
-			ret_value = FAILURE;
-		}
-	}
-	return ret_value;
 }
 
 word_class CheckWordType(char* word) {
@@ -313,7 +400,13 @@ word_class CheckWordType(char* word) {
 		ret_value = COMMENT_DECLARATION;
 	} else if(0 != ReadNetWidth(word)) {
 		ret_value = WIDTH_DECLARATION;
-	} else { //Word is not a keyword
+	} else if(0 == strcmp(word, "if")) {
+		ret_value = IF_DECLARATION;
+	} else if(0 == strcmp(word, "else")) {
+		ret_value = ELSE_DECLARATION;
+	}else if(0 == strcmp(word, "}")) {
+		ret_value = CONDITIONAL_END;
+	}else { //Word is not a keyword
 		ret_value = VARIABLE;
 	}
 	return ret_value;
@@ -341,10 +434,6 @@ component_type ReadComponentType(char* word) {
 		ret_value = mux2x1;
 	} else if(0 == strcmp(word, "<") || 0 == strcmp(word, ">") || 0 == strcmp(word, "==")) {
 		ret_value = comparator;
-	} else if(0 == strcmp(word, "if")) {
-		ret_value = transition_if;
-	} else if(0 == strcmp(word, "else")) {
-		ret_value = transition_else;
 	}
 
 	return ret_value;
@@ -395,3 +484,54 @@ net_sign ReadNetSign(char* word) {
 	}
 	return sign;
 }
+
+
+void ConditionStack_Push(net* cond_net, transition_type type, circuit* circ) {
+	component* conditional = NULL;
+	net* new_net;
+	char net_name[32];
+	port prev_cond;
+	if(NULL != circ) {
+		if(transition_if == type) {
+			conditional = Component_Create(component_if_else);
+			Circuit_AddComponent(circ, conditional);
+			Component_AddInputPort(conditional, cond_net, port_if);
+			Net_GetName(cond_net, net_name);
+			strcat(net_name, "_if");
+			new_net = Net_Create(net_name, net_conditional, net_unsigned, 1);
+			Component_AddOutputPort(conditional, new_net, port_if);
+			if(NULL != condition_stack) {
+				prev_cond = Component_GetOutputPort(condition_stack, (Component_GetNumOutputs(condition_stack)-1));
+				Component_AddInputPort(conditional, prev_cond.port_net, port_if);
+			}
+			condition_stack = conditional;
+		} else if(transition_else == type) {
+			prev_cond = Component_GetInputPort(condition_stack, 0);
+			Net_GetName(prev_cond.port_net, net_name);
+			strcat(net_name, "_else");
+			new_net = Net_Create(net_name, net_conditional, net_unsigned, 1);
+			Component_AddOutputPort(condition_stack, new_net, port_else);
+		} else {
+			LogMessage("ERROR(ConditionStack_Push): Syntax Error", ERROR_LEVEL);
+		}
+	}
+}
+
+void ConditionStack_Pop() {
+	uint8_t num_inputs;
+	port prev_port;
+	if(NULL != condition_stack) {
+		num_inputs = Component_GetNumInputs(condition_stack);
+		if(1 < num_inputs) {
+			prev_port = Component_GetInputPort(condition_stack, (num_inputs-1));
+			condition_stack = Net_GetDriver(prev_port.port_net);
+		} else {
+			condition_stack = NULL;
+		}
+	}
+}
+
+void ClearConditionalStack() {
+	condition_stack = NULL;
+}
+

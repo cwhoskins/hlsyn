@@ -18,6 +18,9 @@ net_type Net_GetType(net* self);
 net_sign Net_GetSign(net* self);
 uint8_t Net_GetWidth(net* self);
 float Net_GetDelay(net* self);
+void Net_SetUsage(net* self, uint8_t new_usage);
+uint8_t Net_GetUsage(net* self);
+component* Net_GetDriver(net* self);
 
 void Net_ResetDelay(net* self);
 void Net_UpdatePathDelay(net* self, float path_delay_ns);
@@ -28,6 +31,7 @@ float Net_CalculateSuccessorForce(net* self, circuit* circ, uint8_t cycle);
 float Net_CalculatePredecessorForce(net* self, circuit* circ, uint8_t cycle);
 void Net_UpdateTimeFrameStart(net* self, uint8_t cycle);
 void Net_UpdateTimeFrameEnd(net* self, uint8_t cycle);
+uint8_t Net_GetTimeFrameEnd(net* self);
 
 void Net_AddReceiver(net* self, component* new_receiver);
 void Net_AddDriver(net* self, component* new_driver);

@@ -20,6 +20,5 @@ state* State_GetNextState(state* self);
 void State_Destroy(state** self);
 uint8_t State_GetNumOperations(state* self);
 component* State_GetOperation(state* self, int idx);
-char* State_PrintOperation(component* op, int spot);
 
 #endif /* STATE_H_ */

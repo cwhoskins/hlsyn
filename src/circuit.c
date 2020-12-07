@@ -10,6 +10,7 @@
 #include "component.h"
 #include "logger.h"
 #include "resource.h"
+#include "file_writer.h"
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -32,10 +33,12 @@ typedef struct struct_circuit {
 } circuit;
 
 void Circuit_TestPrint(circuit* self);
+void Circuit_PrintForceSchedule(circuit* self);
 void Circuit_PrintDistributionGraph(circuit* self);
+
 circuit* Circuit_Create(uint8_t latency) {
-	const uint8_t max_inputs = 32;
-	const uint8_t max_nets = 32;
+	const uint8_t max_inputs = 64;
+	const uint8_t max_nets = 128;
 	uint8_t idx;
 	circuit* new_circuit = (circuit*) malloc(sizeof(circuit));
 	if(NULL != new_circuit) {
@@ -66,14 +69,38 @@ circuit* Circuit_Create(uint8_t latency) {
 net* Circuit_FindNet(circuit* self, char* name) {
 	uint8_t net_idx = 0;
 	net* return_net = NULL;
+	uint8_t cur_usage = 0;
 	char node_name[64];
-	while(net_idx < self->num_nets) {
-		Net_GetName(self->netlist[net_idx], node_name);
-		if(0 == strcmp(node_name, name)) {
-			return_net = self->netlist[net_idx];
-			break;
+	if(NULL != self && NULL != name) {
+		while(net_idx < self->num_nets) {
+			Net_GetName(self->netlist[net_idx], node_name);
+			if(0 == strcmp(node_name, name)) {
+				if(Net_GetUsage(self->netlist[net_idx]) > cur_usage) {
+					return_net = self->netlist[net_idx];
+					cur_usage = Net_GetUsage(self->netlist[net_idx]);
+				}
+			}
+			net_idx++;
 		}
-		net_idx++;
+	}
+	return return_net;
+}
+
+net* Circuit_FindNet_Usage(circuit* self, char* name, uint8_t usage) {
+	uint8_t net_idx = 0;
+	net* return_net = NULL;
+	char node_name[64];
+	if(NULL != self && NULL != name && usage > 0) {
+		while(net_idx < self->num_nets) {
+			Net_GetName(self->netlist[net_idx], node_name);
+			if(0 == strcmp(node_name, name)) {
+				if(Net_GetUsage(self->netlist[net_idx]) == usage) {
+					return_net = self->netlist[net_idx];
+					break;
+				}
+			}
+			net_idx++;
+		}
 	}
 	return return_net;
 }
@@ -181,10 +208,23 @@ void Circuit_ScheduleASAP(circuit* self) {
 uint8_t Circuit_ScheduleALAP(circuit* self) {
 	uint8_t idx;
 	uint8_t ret_value = SUCCESS;
+	net* cur_output = NULL;
 	for(idx = 0;idx < self->num_outputs; idx++) {
-		ret_value = Net_SchedulePathALAP(self->output_nets[idx], (self->latency+1));
+		cur_output = self->output_nets[idx];
+		ret_value = Net_SchedulePathALAP(cur_output, (self->latency+1));
 		if(FAILURE == ret_value) {
 			break;
+		}
+	}
+	if(FAILURE != ret_value) {
+		for(idx = 0;idx < self->num_nets; idx++) {
+			cur_output = self->netlist[idx];
+			if(0 == Net_GetTimeFrameEnd(cur_output)) {//Wasn't updated since net does not map to output
+				ret_value = Net_SchedulePathALAP(cur_output, (self->latency+1));
+				if(FAILURE == ret_value) {
+					break;
+				}
+			}
 		}
 	}
 	return ret_value;
@@ -194,7 +234,11 @@ void Circuit_ScheduleForceDirected(circuit* self, state_machine* sm) {
 
 	uint8_t s_idx, cycle_idx, comp_idx, min_cycle;
 	component* min_component;
+	uint8_t first_component = 0;
 	float min_force, self_force, suc_force, pred_force, total_force;
+	uint8_t cycle_start, cycle_end;
+	char log_msg[128], scheduled_net_name[8];
+	net* scheduled_net;
 
 	if(NULL != self && NULL != sm) {
 		Circuit_ScheduleASAP(self);
@@ -202,28 +246,59 @@ void Circuit_ScheduleForceDirected(circuit* self, state_machine* sm) {
 		Circuit_TestPrint(self);
 		Circuit_CalculateDistributionGraphs(self);
 		Circuit_PrintDistributionGraph(self);
-		return;
 		for(s_idx = 0; s_idx < self->num_components; s_idx++) { //Cycle through every operation so that all get scheduled
 			Circuit_CalculateDistributionGraphs(self);
 			for(comp_idx = 0; comp_idx < self->num_components; comp_idx++) {
 				if(FALSE == Component_GetIsScheduled(self->component_list[comp_idx])) { //Skip component if it's already been scheduled
-					for(cycle_idx = 1; cycle_idx <= self->latency; cycle_idx++) {
+
+					cycle_start = Component_GetTimeFrameStart(self->component_list[comp_idx]);
+					cycle_end = Component_GetTimeFrameEnd(self->component_list[comp_idx]);
+					for(cycle_idx = cycle_start; cycle_idx <= cycle_end; cycle_idx++) {
+
 						self_force = Component_CalculateSelfForce(self->component_list[comp_idx], self, cycle_idx);
 						suc_force = Component_CalculateSuccessorForce(self->component_list[comp_idx], self, cycle_idx);
 						pred_force = Component_CalculatePredecessorForce(self->component_list[comp_idx], self, cycle_idx);
 						total_force = self_force + suc_force + pred_force;
-						if((1 == cycle_idx && 0 == comp_idx) || (total_force < min_force)) {
+						if(0 == first_component || total_force < min_force) {
 							min_force = total_force;
 							min_component = self->component_list[comp_idx];
 							min_cycle = cycle_idx;
+							first_component = 1;
 						}
 					}
 				}
 			}
-			StateMachine_ScheduleOperation(sm, min_component, min_cycle);
+			port output_port = Component_GetOutputPort(min_component, 0);
+			scheduled_net = output_port.port_net;
+			Net_GetName(scheduled_net, scheduled_net_name);
+			if(FALSE == Component_GetIsScheduled(min_component)) {
+				sprintf(log_msg, "MSG(Circuit_ScheduleForceDirected): %s scheduled to cycle %d with force %.2f\n", scheduled_net_name, min_cycle, min_force);
+				LogMessage(log_msg, MESSAGE_LEVEL);
+				StateMachine_ScheduleOperation(sm, min_component, min_cycle);
+			} else {
+				break;
+			}
+			first_component = 0;
 		}
+		Circuit_ScheduleConditionals(self, sm);
+		Circuit_PrintForceSchedule(self);
 	} else {
 		LogMessage("ERROR(Circuit_ScheduleForceDirected): Invalid input pointers\n", ERROR_LEVEL);
+	}
+}
+
+void Circuit_ScheduleConditionals(circuit* self, state_machine* sm) {
+	uint8_t comp_idx, port_idx;
+	component* cur_component;
+	for(comp_idx = 0; comp_idx < self->num_components; comp_idx++) {
+		cur_component = self->component_list[comp_idx];
+		if(component_if_else == Component_GetType(cur_component)) {
+			if(Component_GetTimeFrameStart(cur_component) != Component_GetTimeFrameEnd(cur_component)) {
+				LogMessage("MSG(Circuit_ScheduleConditionals): Could not schedule conditional\n", ERROR_LEVEL);
+			} else {
+				StateMachine_ScheduleOperation(sm, cur_component, Component_GetTimeFrameEnd(cur_component));
+			}
+		}
 	}
 }
 
@@ -231,14 +306,17 @@ void Circuit_CalculateDistributionGraphs(circuit* self) {
 	uint8_t rsrc_idx, comp_idx, cycle_idx;
 	component* cur_comp = NULL;
 	float probability;
-	for(rsrc_idx = 0; rsrc_idx < resource_error;rsrc_idx++) {
+	uint8_t cycle_start, cycle_end;
+	for(rsrc_idx = 0; rsrc_idx < resource_none;rsrc_idx++) {
 		for(cycle_idx=0;cycle_idx<self->latency;cycle_idx++) { //Zero out dg before calculating
 			self->distribution_graphs[rsrc_idx][cycle_idx] = 0;
 		}
 		for(comp_idx=0;comp_idx < self->num_components;comp_idx++) {
 			cur_comp = self->component_list[comp_idx];
 			if(rsrc_idx == Component_GetResourceType(cur_comp)) {
-				for(cycle_idx=0;cycle_idx<self->latency;cycle_idx++) {
+				cycle_start = Component_GetTimeFrameStart(self->component_list[comp_idx]);
+				cycle_end = Component_GetTimeFrameEnd(self->component_list[comp_idx]);
+				for(cycle_idx=cycle_start;cycle_idx<=cycle_end;cycle_idx++) {
 					probability = Component_GetProbability(cur_comp, (cycle_idx+1));
 					self->distribution_graphs[rsrc_idx][cycle_idx] += probability;
 				}
@@ -250,8 +328,10 @@ void Circuit_CalculateDistributionGraphs(circuit* self) {
 float Circuit_GetDistributionGraph(circuit* self, resource_type type, uint8_t cycle) {
 	float ret_value = 0.0f;
 	uint8_t cycle_idx = cycle-1;
-	if(NULL != self && cycle > 0 && cycle <= self->latency) {
-		ret_value = self->distribution_graphs[type][cycle_idx];
+	if(NULL != self && cycle > 0 && type < resource_none) {
+		if(cycle <= self->latency) {
+			ret_value = self->distribution_graphs[type][cycle_idx];
+		}
 	} else {
 		LogMessage("Error(Circuit_GetDistributionGraph): Invalid Input", ERROR_LEVEL);
 	}
@@ -303,12 +383,31 @@ void Circuit_TestPrint(circuit* self) {
 	}
 }
 
+void Circuit_PrintForceSchedule(circuit* self) {
+	uint8_t idx;
+	char line_buffer[512];
+	char type_declaration[8];
+	FILE* fp;
+	uint8_t cycle;
+	if(NULL != self) {
+		fp = fopen("./test/fds.txt", "w+");
+		if(NULL == fp) {
+			LogMessage("Error: Cannot open output file\n", ERROR_LEVEL);
+			return;
+		}
+		for(idx=0;idx<self->num_components;idx++) {
+			DeclareComponent(self->component_list[idx], line_buffer, idx);
+			cycle = Component_GetTimeFrameStart(self->component_list[idx]);
+			fprintf(fp, "%s\n\tCycle: %d\n\n", line_buffer, cycle);
+		}
+		fclose(fp);
+	}
+}
+
 void Circuit_PrintDistributionGraph(circuit* self) {
 	uint8_t idx, r_idx;
 	char line_buffer[512], cell_buffer[32];
-	char type_declaration[8];
 	FILE* fp;
-	uint8_t asap, alap;
 	if(NULL != self) {
 		fp = fopen("./test/distribution_graph.csv", "w+");
 		if(NULL == fp) {
@@ -323,7 +422,7 @@ void Circuit_PrintDistributionGraph(circuit* self) {
 		strcat(line_buffer, "\n");
 		fprintf(fp, line_buffer);
 
-		for(r_idx=resource_multiplier;r_idx<resource_error;r_idx++) {
+		for(r_idx=resource_multiplier;r_idx<resource_none;r_idx++) {
 			switch(r_idx) {
 			case resource_multiplier:
 				sprintf(line_buffer, "multiplier");

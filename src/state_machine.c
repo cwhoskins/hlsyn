@@ -107,3 +107,4 @@ void StateMachine_Destroy(state_machine** self) {
 		*self = NULL;
 	}
 }
+
