@@ -9,7 +9,6 @@
 #include "net.h"
 #include "component.h"
 #include "logger.h"
-#include "resource.h"
 #include "file_writer.h"
 #include <string.h>
 #include <stddef.h>
@@ -159,37 +158,6 @@ uint8_t Circuit_GetNumComponent(circuit* self) {
 	return ret_value;
 }
 
-void Circuit_CalculateDelay(circuit* self) {
-	uint8_t idx;
-	const float input_delay_ns = 0.0f;
-	float max_delay = 0.0f;
-	//Reset netlist for new scheduling
-	for(idx = 0; idx < self->num_nets;idx++) {
-		Net_ResetDelay(self->netlist[idx]);
-	}
-
-	for(idx = 0;idx < self->num_inputs; idx++) {
-		Net_UpdatePathDelay(self->input_nets[idx], input_delay_ns);
-	}
-
-	//Find critical path value
-	for(idx = 0; idx < self->num_nets;idx++) {
-		if(max_delay < Net_GetDelay(self->netlist[idx])) {
-			max_delay = Net_GetDelay(self->netlist[idx]);
-		}
-	}
-	self->critical_path_ns = max_delay;
-
-}
-
-float Circuit_GetCriticalPath(circuit* self) {
-	float critical_path_ns = -1.0f;
-	if(NULL != self) {
-		critical_path_ns = self->critical_path_ns;
-	}
-	return critical_path_ns;
-}
-
 void PrintCircuit(circuit* self) {
 	uint8_t net_idx;
 	for(net_idx = 0; net_idx < self->num_nets; net_idx++) {
@@ -222,6 +190,7 @@ uint8_t Circuit_ScheduleALAP(circuit* self) {
 			if(0 == Net_GetTimeFrameEnd(cur_output)) {//Wasn't updated since net does not map to output
 				ret_value = Net_SchedulePathALAP(cur_output, (self->latency+1));
 				if(FAILURE == ret_value) {
+					LogMessage("ERROR(Circuit_ScheduleALAP): Could not meet timing constraints\n", CIRCUIT_ERROR_LEVEL);
 					break;
 				}
 			}
@@ -230,7 +199,7 @@ uint8_t Circuit_ScheduleALAP(circuit* self) {
 	return ret_value;
 }
 
-void Circuit_ScheduleForceDirected(circuit* self, state_machine* sm) {
+uint8_t Circuit_ScheduleForceDirected(circuit* self, state_machine* sm) {
 
 	uint8_t s_idx, cycle_idx, comp_idx, min_cycle;
 	component* min_component;
@@ -242,7 +211,9 @@ void Circuit_ScheduleForceDirected(circuit* self, state_machine* sm) {
 
 	if(NULL != self && NULL != sm) {
 		Circuit_ScheduleASAP(self);
-		Circuit_ScheduleALAP(self);
+		if(FAILURE == Circuit_ScheduleALAP(self)) {
+			return FAILURE;
+		}
 		Circuit_TestPrint(self);
 		Circuit_CalculateDistributionGraphs(self);
 		Circuit_PrintDistributionGraph(self);
@@ -285,19 +256,16 @@ void Circuit_ScheduleForceDirected(circuit* self, state_machine* sm) {
 	} else {
 		LogMessage("ERROR(Circuit_ScheduleForceDirected): Invalid input pointers\n", ERROR_LEVEL);
 	}
+	return SUCCESS;
 }
 
 void Circuit_ScheduleConditionals(circuit* self, state_machine* sm) {
-	uint8_t comp_idx, port_idx;
+	uint8_t comp_idx;
 	component* cur_component;
 	for(comp_idx = 0; comp_idx < self->num_components; comp_idx++) {
 		cur_component = self->component_list[comp_idx];
 		if(component_if_else == Component_GetType(cur_component)) {
-			if(Component_GetTimeFrameStart(cur_component) != Component_GetTimeFrameEnd(cur_component)) {
-				LogMessage("MSG(Circuit_ScheduleConditionals): Could not schedule conditional\n", ERROR_LEVEL);
-			} else {
-				StateMachine_ScheduleOperation(sm, cur_component, Component_GetTimeFrameEnd(cur_component));
-			}
+			StateMachine_ScheduleOperation(sm, cur_component, Component_GetTimeFrameEnd(cur_component));
 		}
 	}
 }
@@ -364,7 +332,6 @@ void Circuit_Destroy(circuit** self) {
 void Circuit_TestPrint(circuit* self) {
 	uint8_t idx;
 	char line_buffer[512];
-	char type_declaration[8];
 	FILE* fp;
 	uint8_t asap, alap;
 	if(NULL != self) {
@@ -386,7 +353,6 @@ void Circuit_TestPrint(circuit* self) {
 void Circuit_PrintForceSchedule(circuit* self) {
 	uint8_t idx;
 	char line_buffer[512];
-	char type_declaration[8];
 	FILE* fp;
 	uint8_t cycle;
 	if(NULL != self) {

@@ -16,6 +16,12 @@ void StateMachine_AddState(state_machine* self, state* new_state);
 void StateMachine_ScheduleOperation(state_machine* self, component* op, uint8_t cycle);
 void StateMachine_InsertState(state_machine* self, state* new_state, transition state_transition);
 state* StateMachine_FindState(state_machine* self, void* conditional, uint8_t cycle);
+state* StateMachine_Search(state_machine* self, uint8_t cycle);
+uint8_t StateMachine_ConditionEnd(state_machine* self, condition cond);
+void StateMachine_Link(state_machine* self);
+uint8_t StateMachine_GetLatency(state_machine* self);
+
+state* StateMachine_GetCycle(state_machine* self, uint8_t cycle);
 
 void StateMachine_Destroy(state_machine** self);
 

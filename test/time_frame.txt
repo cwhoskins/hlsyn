@@ -1,24 +1,40 @@
-	Add #(.DATA_WIDTH(8)) Add_0 (.a(a), .b(b), .sum(d));
+	SAdd #(.DATA_WIDTH(32)) Add_0 (.a(a), .b(b), .sum(d));
 	ASAP: 1
 	ALAP: 2
 
-	Add #(.DATA_WIDTH(8)) Add_1 (.a(a), .b(c), .sum(e));
+	If_Else #(.DATA_WIDTH(1)) If_Else_1 (.cond(t), .if_o(t_if), .else_o(t_else));
 	ASAP: 1
-	ALAP: 2
+	ALAP: 1
 
-	Comp #(.DATA_WIDTH(8)) Comp_2 (.a(d), .b(e), .gt(g));
+	SSub #(.DATA_WIDTH(32)) Sub_2 (.if_i(t_if), .prev_op(d), .a(a), .b(one), .diff(d));
 	ASAP: 2
 	ALAP: 3
 
-	Mux2x1 #(.DATA_WIDTH(8)) Mux2x1_3 (.a(d), .b(e), .sel(g), .d(z));
+	SAdd #(.DATA_WIDTH(32)) Add_3 (.if_i(t_if), .a(a), .b(c), .sum(f));
+	ASAP: 2
+	ALAP: 3
+
+	SSub #(.DATA_WIDTH(32)) Sub_4 (.if_i(t_if), .a(f), .b(d), .diff(x));
 	ASAP: 3
 	ALAP: 4
 
-	Mul #(.DATA_WIDTH(8)) Mul_4 (.a(a), .b(c), .prod(f));
-	ASAP: 1
+	SAdd #(.DATA_WIDTH(32)) Add_5 (.else_i(t_else), .a(a), .b(c), .sum(e));
+	ASAP: 2
 	ALAP: 2
 
-	Sub #(.DATA_WIDTH(16)) Sub_5 (.a({{8{1'b0}}, f}), .b({{8{1'b0}}, d}), .diff(x));
+	SComp #(.DATA_WIDTH(32)) Comp_6 (.else_i(t_else), .a(d), .b(e), .gt(g));
 	ASAP: 3
+	ALAP: 3
+
+	Mux2x1 #(.DATA_WIDTH(32)) Mux2x1_7 (.else_i(t_else), .a(d), .b(e), .sel(g), .d(z));
+	ASAP: 4
+	ALAP: 4
+
+	SMul #(.DATA_WIDTH(32)) Mul_8 (.else_i(t_else), .a(a), .b(c), .prod(f));
+	ASAP: 2
+	ALAP: 2
+
+	SSub #(.DATA_WIDTH(32)) Sub_9 (.else_i(t_else), .a(f), .b(d), .diff(x));
+	ASAP: 4
 	ALAP: 4
 

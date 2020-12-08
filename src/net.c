@@ -76,23 +76,6 @@ uint8_t Net_GetUsage(net* self) {
 	return usage;
 }
 
-void Net_UpdatePathDelay(net* self, float path_delay_ns) {
-	uint8_t idx;
-	if(NULL != self) {
-		if(path_delay_ns > self->delay_ns) {
-
-			char log_msg[256];
-			sprintf(log_msg,"MSG: Net %s delay set to %.2f ns\n", self->name, path_delay_ns);
-			LogMessage(log_msg, MESSAGE_LEVEL);
-
-			self->delay_ns = path_delay_ns;
-			for(idx = 0; idx < self->num_receivers;idx++) {
-				Component_UpdatePathDelay(self->receivers[idx], path_delay_ns);
-			}
-		}
-	}
-}
-
 void Net_SchedulePathASAP(net* self, uint8_t cycle) {
 	uint8_t idx;
 	if(NULL != self) {

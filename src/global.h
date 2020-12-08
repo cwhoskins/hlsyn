@@ -27,7 +27,7 @@
 #define MULTIPLIER_CYCLE_DELAY 2
 #define LOGICAL_CYCLE_DELAY 1
 
-#define DEBUG_MODE 0
+#define DEBUG_MODE 1
 
 //Net
 typedef enum enum_net_type {
@@ -81,6 +81,7 @@ typedef enum {
 	prod_out,
 	quot_out,
 	rem_out,
+	port_conditional,
 	port_if,
 	port_else,
 	port_prev_op,
@@ -129,7 +130,6 @@ typedef struct struct_condition condition;
 typedef struct struct_condition {
 	transition_type type;
 	net* net_condition;
-	condition* prev_condition;
 } condition;
 
 //Circuit

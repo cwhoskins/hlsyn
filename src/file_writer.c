@@ -163,7 +163,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	while(curr_state != NULL) {
 
 		curr_cycle = State_GetCycle(curr_state);
-		next_cycle = State_GetCycle(State_GetNextState(curr_state));
+		//next_cycle = State_GetCycle(State_GetNextState(curr_state));
 		fprintf(fp, "\t\t\t 4'd%d: begin\n", curr_cycle);
 		if(curr_cycle == 0) {
 
@@ -183,13 +183,13 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 			num_ops = State_GetNumOperations(curr_state);
 			for(idx = 0; idx < num_ops; idx++) {
 				curr_op = State_GetOperation(curr_state, idx);
-				fprintf(fp, "\t\t\t\t %s\n", Component_PrintOperation(curr_op, idx));
-				free(Component_PrintOperation(curr_op, idx));
+				//fprintf(fp, "\t\t\t\t %s\n", Component_PrintOperation(curr_op, idx));
+				//free(Component_PrintOperation(curr_op, idx));
 			}
 			fprintf(fp, "\t\t\t\t state <= %d;\n", next_cycle);
 		}
 		fputs("\t\t\t end\n", fp);
-		curr_state = State_GetNextState(curr_state);
+		//curr_state = State_GetNextState(curr_state);
 
 	}
 	fputs("\t\t\t endcase\n", fp);
@@ -347,6 +347,9 @@ void DeclareComponent(component* self, char* line_buffer, uint8_t comp_idx) {
 				break;
 			case port_prev_op:
 				sprintf(temp_port_declaration, ".prev_op(%s)", port_name);
+				break;
+			case port_conditional:
+				sprintf(temp_port_declaration, ".cond(%s)", port_name);
 				break;
 			default:
 				break;
