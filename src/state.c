@@ -158,6 +158,10 @@ state* State_GetNextState(state* self, uint8_t idx) {
 
 void State_Destroy(state** self) {
 	if(NULL != (*self)) {
+		while((*self)->num_states > 0) {
+			(*self)->num_states--;
+			State_Destroy(&((*self)->next_state[(*self)->num_states]));
+		}
 		free((*self)->operations);
 		free((*self));
 		(*self) = NULL;
