@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include "component.h"
 #include "logger.h"
 #include "net.h"
@@ -483,4 +484,168 @@ void Component_Destroy(component** self) {
 		free((*self));
 		*self = NULL;
 	}
+}
+
+char* Component_PrintOperation(component* op, int spot) {
+	int idx = 0;
+	char o[] = "";
+	char a[] = "";
+	char b[] = "";
+	char sh[] = "";
+	char sel[] = "";
+	char i0[] = "";
+	char i1[] = "";
+	int size = 64;
+	char* eqn = malloc(size);
+
+	switch(Component_GetType(op)) {
+	case adder:
+		Net_GetName(op->output_ports[spot].port_net, o);
+		strcat(strcat(eqn, o), " = ");
+		while(idx < Component_GetNumInputs(op)) {
+			if(datapath_a == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[idx].port_net, a);
+				strcat(strcat(eqn, a), " + ");
+			}
+			if(datapath_b == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[idx].port_net, b);
+				strcat(strcat(eqn, b), ";\n");
+			}
+			idx++;
+		}
+		break;
+	case subtractor:
+		while(idx < Component_GetNumInputs(op)) {
+			if(datapath_a == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[idx].port_net, a);
+			}
+			else if(datapath_b == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[idx].port_net, b);
+			}
+			idx++;
+		}
+		Net_GetName(op->output_ports[spot].port_net, o);
+		strcat(strcat(eqn, o), " = ");
+		strcat(strcat(eqn, a), " - ");
+		strcat(strcat(eqn, b), ";\n");
+		break;
+	case multiplier:
+		while(idx < Component_GetNumInputs(op)) {
+			if(datapath_a == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[idx].port_net, a);
+			}
+			else if(datapath_b == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[idx].port_net, b);
+			}
+			idx++;
+		}
+		Net_GetName(op->output_ports[spot].port_net, o);
+		strcat(strcat(eqn,o), " = ");
+		strcat(strcat(eqn, a), " * ");
+		strcat(strcat(eqn, b), ";\n");
+		break;
+	case comparator:
+		while(idx < Component_GetNumInputs(op)) {
+			if(datapath_a == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[idx].port_net, a);
+			}
+			else if(datapath_b == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[idx].port_net, b);
+			}
+			idx++;
+		}
+		Net_GetName(op->output_ports[spot].port_net, o);
+		strcat(strcat(eqn, o), " = ");
+		if(greater_than_out == op->output_ports[idx].type) {
+			strcat(strcat(eqn, a), " > ");
+		}
+		else if(less_than_out == op->output_ports[idx].type) {
+			strcat(strcat(eqn, a), " < ");
+		}
+		else if(equal_out == op->output_ports[idx].type) {
+			strcat(strcat(eqn, a), " == ");
+		}
+		strcat(strcat(eqn, b), ";\n");
+		break;
+	case mux2x1:
+		while(idx < Component_GetNumInputs(op)) {
+			if(mux_sel == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[spot].port_net, sel);
+			}
+			else if(datapath_a == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[spot].port_net, i0);
+			}
+			else if(datapath_b == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[spot].port_net, i1);
+			}
+			idx++;
+		}
+		Net_GetName(op->output_ports[spot].port_net, o);
+		strcat(strcat(eqn, o), " = ");
+		strcat(strcat(eqn, sel), " ? ");
+		strcat(strcat(eqn, i1), " : ");
+		strcat(strcat(eqn, i0), ";\n");
+		break;
+	case shift_right:
+		while(idx < Component_GetNumInputs(op)) {
+			if(datapath_a == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[spot].port_net, a);
+			}
+			else if(shift_amount == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[spot].port_net, sh);
+			}
+		}
+		Net_GetName(op->output_ports[spot].port_net, o);
+		strcat(strcat(eqn, o), " = ");
+		strcat(strcat(eqn, a), " >> ");
+		strcat(strcat(eqn, sh), ";\n");
+		break;
+	case shift_left:
+		while(idx < Component_GetNumInputs(op)) {
+			if(datapath_a == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[spot].port_net, a);
+			}
+			else if(shift_amount == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[spot].port_net, sh);
+			}
+		}
+		Net_GetName(op->output_ports[spot].port_net, o);
+		strcat(strcat(eqn, o), " = ");
+		strcat(strcat(eqn, a), " << ");
+		strcat(strcat(eqn, sh), ";\n");
+		break;
+	case divider:
+		while(idx < Component_GetNumInputs(op)) {
+			if(datapath_a == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[spot].port_net, a);
+			}
+			else if(datapath_b == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[spot].port_net, b);
+			}
+			idx++;
+		}
+		Net_GetName(op->output_ports[spot].port_net, o);
+		strcat(strcat(eqn, o), " = ");
+		strcat(strcat(eqn, a), " / ");
+		strcat(strcat(eqn, b), ";\n");
+		break;
+	case modulo:
+		while(idx < Component_GetNumInputs(op)) {
+			if(datapath_a == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[spot].port_net, a);
+			}
+			else if(datapath_b == op->input_ports[idx].type) {
+				Net_GetName(op->input_ports[spot].port_net, b);
+			}
+			idx++;
+		}
+		Net_GetName(op->output_ports[spot].port_net, o);
+		strcat(strcat(eqn, o), " = ");
+		strcat(strcat(eqn, a), " % ");
+		strcat(strcat(eqn, b), ";\n");
+		break;
+	}
+
+	return eqn;
+
 }

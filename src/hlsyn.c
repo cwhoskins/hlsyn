@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
 
 	char* c_file = NULL;
 	char* verilog_file = NULL;
+	char* latency_val = NULL;
 	int laten;
 
 #if DEBUG_MODE == 1
@@ -119,6 +120,9 @@ int main(int argc, char *argv[]) {
 
 #else
 
+	int latency;
+	int val = -1;
+
 	if(argc < 4) {
 		printf("ERROR: Not enough arguments.\n");
 		return FAILURE;
@@ -129,9 +133,9 @@ int main(int argc, char *argv[]) {
 	}
 	else {
 		c_file = argv[1];
-		lat = argv[2];
+		latency_val = argv[2];
 		verilog_file = argv[3];
-		latency = atoi(lat);
+		latency = atoi(latency_val);
 	}
 
 	SetLogFile(NULL);
@@ -140,10 +144,13 @@ int main(int argc, char *argv[]) {
 
 	circuit* netlist_circuit = Circuit_Create(latency);
 	state_machine* sm = StateMachine_Create(latency);
-	if(FAILURE == ReadNetlist(c_file, netlist_circuit)) {
+	val = ReadNetlist(c_file, netlist_circuit);
+
+	if(FAILURE == val) {
 		Circuit_Destroy(netlist_circuit);
 		return EXIT_FAILURE;
 	}
+	Circuit_ScheduleForceDirected(netlist_circuit, sm);
 	PrintStateMachine(verilog_file, netlist_circuit, sm, latency);
 
 

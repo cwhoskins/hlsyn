@@ -9,7 +9,6 @@
 #include "net.h"
 #include "component.h"
 #include "logger.h"
-#include "resource.h"
 #include "file_writer.h"
 #include <string.h>
 #include <stddef.h>

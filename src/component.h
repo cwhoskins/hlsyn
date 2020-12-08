@@ -48,5 +48,6 @@ net_sign Component_GetSign(component* self);
 
 
 void Component_Destroy(component** self);
+char* Component_PrintOperation(component* op, int spot);
 
 #endif /* COMPONENT_H_ */

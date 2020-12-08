@@ -39,6 +39,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	state* init_state = StateMachine_FindState(sm, cond, init_cycle);
 	uint8_t num_ops;
 	component* curr_op;
+	char* eqn;
 
 
 	LogMessage("MSG: Writing Circuit to file\n", MESSAGE_LEVEL);
@@ -173,20 +174,21 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 			fputs("\t\t\t\t\t state <= 1;\n", fp);
 			fputs("\t\t\t\t end\n", fp);
 		}
-		else if(curr_cycle == latency+1) {
+		else if(curr_cycle < latency+1) {
 			fputs("\t\t\t\t Done = 1;\n", fp);
 			fputs("\t\t\t\t state <= 0;\n", fp);
-
-		}
-
-		else {
 			num_ops = State_GetNumOperations(curr_state);
 			for(idx = 0; idx < num_ops; idx++) {
 				curr_op = State_GetOperation(curr_state, idx);
 				fprintf(fp, "\t\t\t\t %s\n", Component_PrintOperation(curr_op, idx));
+				// issue comes from the free?
 				free(Component_PrintOperation(curr_op, idx));
 			}
 			fprintf(fp, "\t\t\t\t state <= %d;\n", next_cycle);
+		}
+		else if(curr_cycle == latency+1){
+			fputs("\t\t\t\t Done = 1;\n", fp);
+			fputs("\t\t\t\t state <= 0;\n", fp);
 		}
 		fputs("\t\t\t end\n", fp);
 		curr_state = State_GetNextState(curr_state);
