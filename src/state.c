@@ -14,6 +14,7 @@
 #include "file_writer.h"
 
 typedef struct struct_state {
+	uint8_t state_number;
 	uint8_t cycle;
 	state* next_state[2];
 	uint8_t num_states;
@@ -30,6 +31,7 @@ state* State_Create(uint8_t cycle) {
 	state* new_state = (state*) malloc(sizeof(state));
 	if(NULL != new_state) {
 		new_state->cycle = cycle;
+		new_state->state_number = 255;
 		new_state->num_operations = 0;
 		new_state->num_states = 0;
 		new_state->next_state[0] = NULL;
@@ -69,14 +71,17 @@ void State_AddOperation(state* self, component* operation) {
 	}
 }
 
-void State_LinkState(state* self, state_machine* sm, uint8_t cycle, condition cond) {
+uint8_t State_LinkState(state* self, state_machine* sm, uint8_t cycle, condition cond, uint8_t state_number) {
 	uint8_t has_if_else = FALSE;
 	uint8_t idx;
+	uint8_t cur_state_num = state_number;
 	component* cur_comp;
 	condition cur_cond;
 	condition next_condition = cond;
 	state* new_state = NULL;
 	if(NULL != self && NULL != sm) {
+		if(state_number < self->state_number) self->state_number = state_number;
+		cur_state_num++;
 		state* cur_cycle = StateMachine_GetCycle(sm, cycle);
 		if(NULL != cur_cycle) {
 			for(idx=0;idx < State_GetNumOperations(cur_cycle);idx++) {
@@ -104,15 +109,16 @@ void State_LinkState(state* self, state_machine* sm, uint8_t cycle, condition co
 		if(NULL == new_state && self->cycle <= StateMachine_GetLatency(sm)) {
 			new_state= State_Create(self->cycle+1);
 			State_AddNextState(self, new_state);
-			State_LinkState(new_state, sm, cycle+1, next_condition);
+			cur_state_num = State_LinkState(new_state, sm, cycle+1, next_condition, cur_state_num);
 		}
 		if(TRUE == has_if_else) {
 			state* else_state = State_Create(self->cycle+1);
 			State_AddNextState(self, else_state);
 			next_condition.type = transition_else;
-			State_LinkState(else_state, sm, cycle+1, next_condition);
+			cur_state_num = State_LinkState(else_state, sm, cycle+1, next_condition, cur_state_num);
 		}
 	}
+	return cur_state_num;
 }
 
 state* State_Search(state* self, uint8_t cycle) {
@@ -185,11 +191,19 @@ component* State_GetOperation(state* self, uint8_t idx) {
 	return ret_value;
 }
 
+uint8_t State_GetStateNumber(state* self) {
+	uint8_t ret = 0;
+	if(NULL != self) {
+		ret = self->state_number;
+	}
+	return ret;
+}
+
 void State_TestPrint(state* self, FILE* output_file) {
 	uint8_t idx;
 	char line_buffer[128];
 	if(NULL != self && NULL != output_file) {
-		fprintf(output_file, "\nCycle #%d\n", self->cycle);
+		fprintf(output_file, "\nCycle #%d\tState #%d\n", self->cycle, self->state_number);
 		for(idx=0;idx<self->num_operations;idx++) {
 			DeclareComponent(self->operations[idx], line_buffer, idx);
 			fprintf(output_file, "\t%s\n", line_buffer);

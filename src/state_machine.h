@@ -20,6 +20,7 @@ state* StateMachine_Search(state_machine* self, uint8_t cycle);
 uint8_t StateMachine_ConditionEnd(state_machine* self, condition cond);
 void StateMachine_Link(state_machine* self);
 uint8_t StateMachine_GetLatency(state_machine* self);
+uint8_t StateMachine_GetNumStates(state_machine* self);
 
 state* StateMachine_GetCycle(state_machine* self, uint8_t cycle);
 

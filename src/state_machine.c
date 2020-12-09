@@ -16,6 +16,7 @@ typedef struct struct_state_machine {
 	state* head;
 	state** state_list;
 	uint8_t num_states;
+	uint8_t total_states;
 } state_machine;
 
 void StateMachine_TestPrint(state_machine* self);
@@ -30,6 +31,7 @@ state_machine* StateMachine_Create(uint8_t latency) {
 		for(idx = 0; idx < latency; idx++) {
 			new_sm->state_list[idx] = State_Create(idx+1);
 		}
+		new_sm->total_states = 0;
 		new_sm->num_states = 0;
 		new_sm->head = State_Create(0);
 		new_sm->latency = latency;
@@ -55,7 +57,7 @@ void StateMachine_Link(state_machine* self) {
 	condition initial_condition = {.type = transition_all, .net_condition = NULL};
 	if(NULL != self) {
 		StateMachine_TestPrintCycle(self);
-		State_LinkState(self->head, self, 0, initial_condition);
+		self->total_states = State_LinkState(self->head, self, 0, initial_condition, 0);
 		StateMachine_TestPrint(self);
 	}
 }
@@ -154,6 +156,14 @@ state* StateMachine_FindState(state_machine* self, void* conditional, uint8_t cy
 		}
 	}
 	return NULL;
+}
+
+uint8_t StateMachine_GetNumStates(state_machine* self) {
+	uint8_t ret = 0;
+	if(NULL != self) {
+		ret = self->total_states;
+	}
+	return ret;
 }
 
 void StateMachine_Destroy(state_machine** self) {
