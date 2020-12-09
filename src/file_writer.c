@@ -37,8 +37,9 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	void* cond = 0;
 	state* curr_state;
 	state* init_state = StateMachine_FindState(sm, cond, init_cycle);
-	uint8_t num_ops;
+	uint8_t num_op;
 	component* curr_op;
+	char eqn[64];
 
 
 	LogMessage("MSG: Writing Circuit to file\n", MESSAGE_LEVEL);
@@ -49,7 +50,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 		return;
 	}
 
-	fprintf(fp, "TODO: Implement file write\n");
+	//fprintf(fp, "TODO: Implement file write\n");
 
 	// Create inputs list
 	for(idx = 0; idx < num_nets; idx++) {
@@ -86,7 +87,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	fputs("\n", fp);
 	fprintf(fp, "module HLSM(Clk, Rst, Start, %sDone, %s);\n", in_list, out_list);
 	fputs("\n", fp);
-	fputs("localparam OUTPUT_WIDTH = 2*DATA_WIDTH;\n", fp);
+	fputs("\tlocalparam OUTPUT_WIDTH = 2*DATA_WIDTH;\n", fp);
 	fputs("\n", fp);
 
 	// List inputs
@@ -163,7 +164,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	while(curr_state != NULL) {
 
 		curr_cycle = State_GetCycle(curr_state);
-		//next_cycle = State_GetCycle(State_GetNextState(curr_state));
+		next_cycle = State_GetCycle(State_GetNextState(curr_state));
 		fprintf(fp, "\t\t\t 4'd%d: begin\n", curr_cycle);
 		if(curr_cycle == 0) {
 
@@ -173,20 +174,18 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 			fputs("\t\t\t\t\t state <= 1;\n", fp);
 			fputs("\t\t\t\t end\n", fp);
 		}
-		else if(curr_cycle == latency+1) {
-			fputs("\t\t\t\t Done = 1;\n", fp);
-			fputs("\t\t\t\t state <= 0;\n", fp);
-
-		}
-
-		else {
-			num_ops = State_GetNumOperations(curr_state);
-			for(idx = 0; idx < num_ops; idx++) {
+		else if(curr_cycle < latency+1) {
+			num_op = State_GetNumOperations(curr_state);
+			for(idx = 0; idx < num_op; idx++) {
 				curr_op = State_GetOperation(curr_state, idx);
-				//fprintf(fp, "\t\t\t\t %s\n", Component_PrintOperation(curr_op, idx));
-				//free(Component_PrintOperation(curr_op, idx));
+				Component_PrintOperation(curr_op, idx, eqn);
+				fprintf(fp, "\t\t\t\t %s\n", eqn);
 			}
 			fprintf(fp, "\t\t\t\t state <= %d;\n", next_cycle);
+		}
+		else if(curr_cycle == latency+1){
+			fputs("\t\t\t\t Done = 1;\n", fp);
+			fputs("\t\t\t\t state <= 0;\n", fp);
 		}
 		fputs("\t\t\t end\n", fp);
 		//curr_state = State_GetNextState(curr_state);

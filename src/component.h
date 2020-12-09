@@ -45,5 +45,6 @@ condition Component_GetCondition(component* self);
 
 
 void Component_Destroy(component** self);
+void Component_PrintOperation(component* op, int spot, char* equ);
 
 #endif /* COMPONENT_H_ */
