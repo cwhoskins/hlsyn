@@ -104,6 +104,7 @@ uint8_t State_LinkState(state* self, state_machine* sm, uint8_t cycle, condition
 					next_condition.net_condition = NULL; //End condition
 					next_condition.type = transition_all;
 				}
+				if(NULL != new_state) State_AddNextState(self, new_state);
 			}
 		}
 		if(NULL == new_state && self->cycle <= StateMachine_GetLatency(sm)) {
@@ -166,7 +167,7 @@ void State_Destroy(state** self) {
 	if(NULL != (*self)) {
 		while((*self)->num_states > 0) {
 			(*self)->num_states--;
-			State_Destroy(&((*self)->next_state[(*self)->num_states]));
+			//State_Destroy(&((*self)->next_state[(*self)->num_states]));
 		}
 		free((*self)->operations);
 		free((*self));

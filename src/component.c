@@ -409,166 +409,77 @@ void Component_Destroy(component** self) {
 	}
 }
 
-void Component_PrintOperation(component* op, int spot, char* equ) {
+uint8_t Component_PrintOperation(component* op, char* equ) {
 	int idx = 0;
-	char o[] = "";
-	char a[] = "";
-	char b[] = "";
-	char sh[] = "";
-	char sel[] = "";
-	char i0[] = "";
-	char i1[] = "";
+	char o[16];
+	char a[16];
+	char b[16];
+	char sh[16];
+	char sel[16];
 	char eqn[64];
+	if(NULL == op || NULL == equ) return 0;
 
-	switch(Component_GetType(op)) {
-	case adder:
-		Net_GetName(op->output_ports[spot].port_net, o);
-		strcat(strcat(eqn, o), " = ");
-		while(idx < Component_GetNumInputs(op)) {
-			if(datapath_a == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[idx].port_net, a);
-				strcat(strcat(eqn, a), " + ");
-			}
-			if(datapath_b == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[idx].port_net, b);
-				strcat(strcat(eqn, b), ";\n");
-			}
-			idx++;
+	//Get Inputs
+	for(idx=0;idx<op->num_inputs;idx++) {
+		switch(op->input_ports[idx].type) {
+		case datapath_a:
+			Net_GetName(op->input_ports[idx].port_net, a);
+			break;
+		case datapath_b:
+			Net_GetName(op->input_ports[idx].port_net, b);
+			break;
+		case mux_sel:
+			Net_GetName(op->input_ports[idx].port_net, sel);
+			break;
+		case shift_amount:
+			Net_GetName(op->input_ports[idx].port_net, sh);
+			break;
+		default:
+			break;
 		}
-		strcat(equ, eqn);
+	}
+	//Get output name
+	Net_GetName(op->output_ports[0].port_net, o);
+
+	switch(op->type) {
+	case adder:
+		sprintf(eqn,"%s <= %s + %s;", o, a, b);
 		break;
 	case subtractor:
-		while(idx < Component_GetNumInputs(op)) {
-			if(datapath_a == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[idx].port_net, a);
-			}
-			else if(datapath_b == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[idx].port_net, b);
-			}
-			idx++;
-		}
-		Net_GetName(op->output_ports[spot].port_net, o);
-		strcat(strcat(eqn, o), " = ");
-		strcat(strcat(eqn, a), " - ");
-		strcat(strcat(eqn, b), ";\n");
+		sprintf(eqn,"%s <= %s - %s;", o, a, b);
 		break;
 	case multiplier:
-		while(idx < Component_GetNumInputs(op)) {
-			if(datapath_a == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[idx].port_net, a);
-			}
-			else if(datapath_b == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[idx].port_net, b);
-			}
-			idx++;
-		}
-		Net_GetName(op->output_ports[spot].port_net, o);
-		strcat(strcat(eqn,o), " = ");
-		strcat(strcat(eqn, a), " * ");
-		strcat(strcat(eqn, b), ";\n");
+		sprintf(eqn,"%s <= %s * %s;", o, a, b);
 		break;
 	case comparator:
-		while(idx < Component_GetNumInputs(op)) {
-			if(datapath_a == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[idx].port_net, a);
-			}
-			else if(datapath_b == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[idx].port_net, b);
-			}
-			idx++;
+		if(greater_than_out == op->output_ports[0].type) {
+			sprintf(eqn,"%s <= %s > %s;", o, a, b);
+		} else if(less_than_out == op->output_ports[0].type) {
+			sprintf(eqn,"%s <= %s < %s;", o, a, b);
+		} else if(equal_out == op->output_ports[0].type) {
+			sprintf(eqn,"%s <= %s == %s;", o, a, b);
 		}
-		Net_GetName(op->output_ports[spot].port_net, o);
-		strcat(strcat(eqn, o), " = ");
-		if(greater_than_out == op->output_ports[idx].type) {
-			strcat(strcat(eqn, a), " > ");
-		}
-		else if(less_than_out == op->output_ports[idx].type) {
-			strcat(strcat(eqn, a), " < ");
-		}
-		else if(equal_out == op->output_ports[idx].type) {
-			strcat(strcat(eqn, a), " == ");
-		}
-		strcat(strcat(eqn, b), ";\n");
 		break;
 	case mux2x1:
-		while(idx < Component_GetNumInputs(op)) {
-			if(mux_sel == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[spot].port_net, sel);
-			}
-			else if(datapath_a == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[spot].port_net, i0);
-			}
-			else if(datapath_b == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[spot].port_net, i1);
-			}
-			idx++;
-		}
-		Net_GetName(op->output_ports[spot].port_net, o);
-		strcat(strcat(eqn, o), " = ");
-		strcat(strcat(eqn, sel), " ? ");
-		strcat(strcat(eqn, i1), " : ");
-		strcat(strcat(eqn, i0), ";\n");
+		sprintf(eqn,"%s <= %s ? %s : %s;", o, sel, a, b);
 		break;
 	case shift_right:
-		while(idx < Component_GetNumInputs(op)) {
-			if(datapath_a == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[spot].port_net, a);
-			}
-			else if(shift_amount == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[spot].port_net, sh);
-			}
-		}
-		Net_GetName(op->output_ports[spot].port_net, o);
-		strcat(strcat(eqn, o), " = ");
-		strcat(strcat(eqn, a), " >> ");
-		strcat(strcat(eqn, sh), ";\n");
+		sprintf(eqn,"%s <= %s >> %s;", o, a, sh);
 		break;
 	case shift_left:
-		while(idx < Component_GetNumInputs(op)) {
-			if(datapath_a == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[spot].port_net, a);
-			}
-			else if(shift_amount == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[spot].port_net, sh);
-			}
-		}
-		Net_GetName(op->output_ports[spot].port_net, o);
-		strcat(strcat(eqn, o), " = ");
-		strcat(strcat(eqn, a), " << ");
-		strcat(strcat(eqn, sh), ";\n");
+		sprintf(eqn,"%s <= %s << %s;", o, a, sh);
 		break;
 	case divider:
-		while(idx < Component_GetNumInputs(op)) {
-			if(datapath_a == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[spot].port_net, a);
-			}
-			else if(datapath_b == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[spot].port_net, b);
-			}
-			idx++;
-		}
-		Net_GetName(op->output_ports[spot].port_net, o);
-		strcat(strcat(eqn, o), " = ");
-		strcat(strcat(eqn, a), " / ");
-		strcat(strcat(eqn, b), ";\n");
+		sprintf(eqn,"%s <= %s / %s;", o, a, b);
 		break;
 	case modulo:
-		while(idx < Component_GetNumInputs(op)) {
-			if(datapath_a == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[spot].port_net, a);
-			}
-			else if(datapath_b == op->input_ports[idx].type) {
-				Net_GetName(op->input_ports[spot].port_net, b);
-			}
-			idx++;
-		}
-		Net_GetName(op->output_ports[spot].port_net, o);
-		strcat(strcat(eqn, o), " = ");
-		strcat(strcat(eqn, a), " % ");
-		strcat(strcat(eqn, b), ";\n");
+		sprintf(eqn,"%s <= %s %% %s;", o, a, b);
+		break;
+	default:
+		return 0;
 		break;
 	}
-
-	return;
+	strcpy(equ, eqn);
+	return strlen(eqn);
 
 }

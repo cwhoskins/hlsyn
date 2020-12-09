@@ -11,7 +11,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int latency) {
+void Print_StateList(state* cur_state, FILE* print_file, uint8_t latency);
+
+void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm) {
 	if(NULL == file_name || NULL == circ) return;
 
 	FILE* fp;
@@ -30,16 +32,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	char line_buffer[512];
 	net* list_temp = NULL;
 	net* temp_net = NULL;
-
-	uint8_t init_cycle = 0;
-	int curr_cycle;
-	int next_cycle;
-	void* cond = 0;
-	state* curr_state;
-	state* init_state = StateMachine_FindState(sm, cond, init_cycle);
-	uint8_t num_op;
-	component* curr_op;
-	char eqn[64];
+	uint8_t latency = StateMachine_GetLatency(sm);
 
 
 	LogMessage("MSG: Writing Circuit to file\n", MESSAGE_LEVEL);
@@ -160,37 +153,9 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm, int la
 	fputs("\t\t end else begin\n", fp);
 	fputs("\t\t\t case(state)\n", fp);
 
-	curr_state = init_state;
-	while(curr_state != NULL) {
+	state* head = StateMachine_Search(sm, 0);
+	Print_StateList(head, fp, StateMachine_GetLatency(sm));
 
-		curr_cycle = State_GetCycle(curr_state);
-		next_cycle = State_GetCycle(State_GetNextState(curr_state));
-		fprintf(fp, "\t\t\t 4'd%d: begin\n", curr_cycle);
-		if(curr_cycle == 0) {
-
-			fputs("\t\t\t\t if(~Start) begin\n", fp);
-			fputs("\t\t\t\t\t state <= 0;\n", fp);
-			fputs("\t\t\t\t else\n", fp);
-			fputs("\t\t\t\t\t state <= 1;\n", fp);
-			fputs("\t\t\t\t end\n", fp);
-		}
-		else if(curr_cycle < latency+1) {
-			num_op = State_GetNumOperations(curr_state);
-			for(idx = 0; idx < num_op; idx++) {
-				curr_op = State_GetOperation(curr_state, idx);
-				Component_PrintOperation(curr_op, idx, eqn);
-				fprintf(fp, "\t\t\t\t %s\n", eqn);
-			}
-			fprintf(fp, "\t\t\t\t state <= %d;\n", next_cycle);
-		}
-		else if(curr_cycle == latency+1){
-			fputs("\t\t\t\t Done = 1;\n", fp);
-			fputs("\t\t\t\t state <= 0;\n", fp);
-		}
-		fputs("\t\t\t end\n", fp);
-		//curr_state = State_GetNextState(curr_state);
-
-	}
 	fputs("\t\t\t endcase\n", fp);
 	fputs("\t\t end\n", fp);
 	fputs("\t end\n", fp);
@@ -488,4 +453,67 @@ void TestComponentDeclaration() {
 		Component_Destroy(&uut);
 		comp_idx++;
 	}
+}
+
+void Print_StateList(state* cur_state, FILE* print_file, uint8_t latency) {
+	uint8_t cycle, num_op, idx, next_cycle, num_next_state;
+	component* op;
+	char eqn[32], conditional_net_name[32];
+	state* next_state;
+	net* conditional_net;
+	if(NULL != cur_state && NULL != print_file) {
+		cycle = State_GetCycle(cur_state);
+		num_next_state = State_GetNumStates(cur_state);
+		fprintf(print_file, "\t\t\t 4'd%d: begin\n", State_GetStateNumber(cur_state));
+
+		if(0 == cycle) {
+			fputs("\t\t\t\t done <= 0;\n", print_file);
+			fputs("\t\t\t\t if(~Start) begin\n", print_file);
+			fputs("\t\t\t\t\t state <= 0;\n", print_file);
+			fputs("\t\t\t\t else\n", print_file);
+			fputs("\t\t\t\t\t state <= 1;\n", print_file);
+			fputs("\t\t\t\t end\n", print_file);
+		} else if(cycle < (latency+1)) {
+			num_op = State_GetNumOperations(cur_state);
+			for(idx = 0; idx < num_op; idx++) {
+				op = State_GetOperation(cur_state, idx);
+				if(component_if_else == Component_GetType(op)) {
+					port temp = Component_GetInputPort(op, 0);
+					conditional_net = temp.port_net;
+					Net_GetName(conditional_net, conditional_net_name);
+				} else {
+					if(0 != Component_PrintOperation(op, eqn))
+						fprintf(print_file, "\t\t\t\t %s\n", eqn);
+				}
+			}
+
+			if(1 == num_next_state) {
+				next_state = State_GetNextState(cur_state, 0);
+				next_cycle = State_GetStateNumber(next_state);
+				fprintf(print_file, "\t\t\t\t state <= %d;\n", next_cycle);
+			} else if(2 == num_next_state) {
+				for(idx=0;idx<num_next_state;idx++) {
+					next_state = State_GetNextState(cur_state, idx);
+					next_cycle = State_GetStateNumber(next_state);
+					if(0 == idx) {
+						fprintf(print_file, "\t\t\t\t if(%s) state <= %d;\n", conditional_net_name, next_cycle);
+					} else {
+						fprintf(print_file, "\t\t\t\t else(%s) state <= %d;\n", conditional_net_name, next_cycle);
+					}
+				}
+			}
+			fputs("\t\t\t\t end\n", print_file);
+		} else if(cycle == latency+1) {
+			fputs("\t\t\t\t Done <= 1;\n", print_file);
+			fputs("\t\t\t\t state <= 0;\n", print_file);
+			fputs("\t\t\t\t end\n", print_file);
+		}
+
+		for(idx=0;idx<num_next_state;idx++) {
+			next_state = State_GetNextState(cur_state, idx);
+			if(State_GetStateNumber(next_state) > State_GetStateNumber(cur_state))
+				Print_StateList(next_state, print_file, latency);
+		}
+	}
+
 }

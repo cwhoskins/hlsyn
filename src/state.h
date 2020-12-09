@@ -13,8 +13,6 @@
 #include <stdio.h>
 
 state* State_Create(uint8_t cycle);
-void State_SwapPrevState(state* self, state* old_state, state* new_state);
-void State_SwapNextState(state* self, state* old_state, state* new_state);
 void State_AddNextState(state* self, state* next_state);
 void State_AddOperation(state* self, component* operation);
 state* State_Search(state* self, uint8_t cycle);
@@ -22,7 +20,7 @@ uint8_t State_LinkState(state* self, state_machine* sm, uint8_t cycle, condition
 
 uint8_t State_GetCycle(state* self);
 state* State_GetNextState(state* self, uint8_t idx);
-uint8_t State_GetNumNextState(state* self);
+uint8_t State_GetNumStates(state* self);
 void State_Destroy(state** self);
 uint8_t State_GetNumOperations(state* self);
 uint8_t State_GetStateNumber(state* self);

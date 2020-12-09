@@ -19,9 +19,6 @@
 
 int main(int argc, char *argv[]) {
 
-	char* c_file = NULL;
-	char* verilog_file = NULL;
-	char* latency_val = NULL;
 	char c_file[64];
 	char verilog_file[64];
 	int laten;
@@ -59,7 +56,7 @@ int main(int argc, char *argv[]) {
 
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
 				Circuit_ScheduleForceDirected(netlist_circuit, sm);
-				PrintStateMachine(verilog_file, netlist_circuit, sm, latency[idx]);
+				PrintStateMachine(verilog_file, netlist_circuit, sm);
 			} else {
 				break;
 			}
@@ -95,6 +92,7 @@ int main(int argc, char *argv[]) {
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
 				if(FAILURE != Circuit_ScheduleForceDirected(netlist_circuit, sm)) {
 					StateMachine_Link(sm);
+					PrintStateMachine(verilog_file, netlist_circuit, sm);
 				} else {
 					LogMessage("ERROR: Scheduling Failed\n", ERROR_LEVEL);
 				}

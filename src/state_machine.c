@@ -97,6 +97,9 @@ state* StateMachine_Search(state_machine* self, uint8_t cycle) {
 	if(NULL != self) {
 		if(cycle > 0 && (cycle < (self->latency+1)))
 			ret = State_Search(self->head, cycle);
+		else if(0 == cycle) {
+			ret = self->head;
+		}
 	}
 	return ret;
 }

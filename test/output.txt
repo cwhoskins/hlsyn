@@ -80,6 +80,9 @@ MSG(Circuit_ScheduleForceDirected): x scheduled to cycle 3 with force -0.50
 MSG(Circuit_ScheduleForceDirected): g scheduled to cycle 1 with force 0.00
 MSG(Circuit_ScheduleForceDirected): zrin scheduled to cycle 3 with force 0.00
 MSG(Circuit_ScheduleForceDirected): z scheduled to cycle 4 with force 0.00
+MSG: Writing Circuit to file
+MSG: Writing I/O
+MSG: Writing internal nets
 MSG: Parsing Line # 1
 MSG: Parsing Net Declaration
 MSG: Parsing Line # 2
@@ -216,4 +219,262 @@ MSG(Circuit_ScheduleForceDirected): e scheduled to cycle 2 with force 0.00
 MSG(Circuit_ScheduleForceDirected): g scheduled to cycle 3 with force 0.00
 MSG(Circuit_ScheduleForceDirected): z scheduled to cycle 4 with force 0.00
 MSG(Circuit_ScheduleForceDirected): f scheduled to cycle 2 with force 0.00
-MSG(C
+MSG(Circuit_ScheduleForceDirected): x scheduled to cycle 4 with force 0.00
+MSG: Writing Circuit to file
+MSG: Writing I/O
+MSG: Writing internal nets
+MSG: Parsing Line # 1
+MSG: Parsing Net Declaration
+MSG: Parsing Line # 2
+MSG: Parsing Net Declaration
+MSG: Parsing Line # 3
+MSG: Line Ignored - Comment
+MSG: Parsing Line # 4
+MSG: Parsing Net Declaration
+MSG: Parsing Line # 5
+MSG: Parsing Net Declaration
+MSG: Parsing Line # 6
+MSG: Line Ignored - Comment
+MSG: Parsing Line # 7
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 8
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 9
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 10
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 11
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 12
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 13
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 14
+MSG: Parsing Variable Assignment
+MSG: Component is comparator
+MSG: Parsing Line # 15
+MSG: Parsing Variable Assignment
+MSG: Component is comparator
+MSG: Parsing Line # 16
+MSG: Parsing Variable Assignment
+MSG: Component is comparator
+MSG: Parsing Line # 17
+MSG: Line Ignored - Comment
+MSG: Parsing Line # 18
+MSG: If Declaration
+MSG: Parsing Line # 19
+MSG: Parsing Variable Assignment
+MSG: Component is SHR
+MSG: Parsing Line # 20
+MSG: Line Ignored - Comment
+MSG: Parsing Line # 21
+MSG: If Declaration
+MSG: Parsing Line # 22
+MSG: Parsing Variable Assignment
+MSG: Component is SHR
+MSG: Parsing Line # 23
+MSG: Parsing Line # 24
+MSG: Else Declaration
+MSG: Parsing Line # 25
+MSG: Parsing Variable Assignment
+MSG: Component is SHR
+MSG: Parsing Line # 26
+MSG: If Declaration
+MSG: Parsing Line # 27
+MSG: Parsing Variable Assignment
+MSG: Component is SHR
+MSG: Parsing Line # 28
+MSG: Parsing Line # 29
+MSG: Parsing Line # 30
+MSG: Net a assigned at cycle 1
+MSG: Component scheduled from cycle 1 to 2
+MSG: Net t1 assigned at cycle 2
+MSG: Component scheduled from cycle 2 to 3
+MSG: Net t2 assigned at cycle 3
+MSG: Component scheduled from cycle 3 to 4
+MSG: Net t3 assigned at cycle 4
+MSG: Component scheduled from cycle 4 to 5
+MSG: Net t4 assigned at cycle 5
+MSG: Component scheduled from cycle 5 to 6
+MSG: Net t5 assigned at cycle 6
+MSG: Component scheduled from cycle 6 to 7
+MSG: Net t6 assigned at cycle 7
+MSG: Component scheduled from cycle 7 to 8
+MSG: Net t7 assigned at cycle 8
+MSG: Component scheduled from cycle 8 to 9
+MSG: Net t7div2 assigned at cycle 9
+MSG: Component scheduled from cycle 9 to 10
+MSG: Net t7div4 assigned at cycle 10
+MSG: Component scheduled from cycle 8 to 9
+MSG: Net t7div4 assigned at cycle 9
+MSG: Component scheduled from cycle 9 to 10
+MSG: Net avg assigned at cycle 10
+MSG: Net b assigned at cycle 1
+MSG: Net c assigned at cycle 1
+MSG: Net d assigned at cycle 1
+MSG: Net e assigned at cycle 1
+MSG: Net f assigned at cycle 1
+MSG: Net g assigned at cycle 1
+MSG: Net h assigned at cycle 1
+MSG: Net sa assigned at cycle 1
+MSG: Component scheduled from cycle 1 to 2
+MSG: Net csa1 assigned at cycle 2
+MSG: Component scheduled from cycle 2 to 3
+MSG: Net csa1_if assigned at cycle 3
+MSG: Component scheduled from cycle 3 to 4
+MSG: Net csa2_if assigned at cycle 4
+MSG: Net csa2_else assigned at cycle 4
+MSG: Component scheduled from cycle 4 to 5
+MSG: Net csa3_if assigned at cycle 5
+MSG: Component scheduled from cycle 1 to 2
+MSG: Net csa2 assigned at cycle 2
+MSG: Component scheduled from cycle 1 to 2
+MSG: Net csa3 assigned at cycle 2
+MSG: Net one assigned at cycle 1
+MSG: Net two assigned at cycle 1
+MSG: Net four assigned at cycle 1
+MSG: Net avg assigned at cycle 9
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 8 to 9
+MSG: Net csa3_if assigned at cycle 8
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 7 to 8
+MSG: Net csa3 assigned at cycle 7
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 6 to 7
+MSG: Net sa assigned at cycle 6
+MSG: Net four assigned at cycle 6
+MSG: Net csa2_else assigned at cycle 7
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 6 to 7
+MSG: Net csa2 assigned at cycle 6
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 5 to 6
+MSG: Net sa assigned at cycle 5
+MSG: Net two assigned at cycle 5
+MSG: Net csa1_if assigned at cycle 6
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 5 to 6
+MSG: Net csa1 assigned at cycle 5
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 4 to 5
+MSG: Net sa assigned at cycle 4
+MSG: Net one assigned at cycle 4
+MSG: Net t7div4 assigned at cycle 8
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 7 to 8
+MSG: Net t7 assigned at cycle 7
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 6 to 7
+MSG: Net t6 assigned at cycle 6
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 5 to 6
+MSG: Net t5 assigned at cycle 5
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 4 to 5
+MSG: Net t4 assigned at cycle 4
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 3 to 4
+MSG: Net t3 assigned at cycle 3
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 2 to 3
+MSG: Net t2 assigned at cycle 2
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 1 to 2
+MSG: Net t1 assigned at cycle 1
+Error(Component_SchedulePathALAP): Circuit cannot meet latency
+ERROR: Scheduling Failed
+MSG: Parsing Line # 1
+MSG: Parsing Net Declaration
+MSG: Parsing Line # 2
+MSG: Parsing Net Declaration
+MSG: Parsing Line # 3
+MSG: Line Ignored - Comment
+MSG: Parsing Line # 4
+MSG: Parsing Net Declaration
+MSG: Parsing Line # 5
+MSG: Parsing Net Declaration
+MSG: Parsing Line # 6
+MSG: Line Ignored - Comment
+MSG: Parsing Line # 7
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 8
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 9
+MSG: Parsing Variable Assignment
+MSG: Component is -
+MSG: Parsing Line # 10
+MSG: Parsing Variable Assignment
+MSG: Component is comparator
+MSG: Parsing Line # 11
+MSG: Parsing Variable Assignment
+MSG: Component is comparator
+MSG: Parsing Line # 12
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 13
+MSG: Line Ignored - Comment
+MSG: Parsing Line # 14
+MSG: If Declaration
+MSG: Parsing Line # 15
+MSG: Line Ignored - Comment
+MSG: Parsing Line # 16
+MSG: If Declaration
+MSG: Parsing Line # 17
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 18
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 19
+MSG: Parsing Line # 20
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 21
+MSG: Parsing Variable Assignment
+MSG: Component is +
+MSG: Parsing Line # 22
+MSG: Parsing Line # 23
+MSG: Parsing Variable Assignment
+MSG: Component is SHL
+MSG: Parsing Line # 24
+MSG: Parsing Variable Assignment
+MSG: Component is SHR
+MSG: Net a assigned at cycle 1
+MSG: Component scheduled from cycle 1 to 2
+MSG: Net d assigned at cycle 2
+MSG: Component scheduled from cycle 2 to 3
+MSG: Net dEQe assigned at cycle 3
+MSG: Component scheduled from cycle 3 to 4
+MSG: Net dLTEe assigned at cycle 4
+MSG: Component scheduled from cycle 4 to 5
+MSG: Net dLTEe_if assigned at cycle 5
+MSG: Component scheduled from cycle 5 to 6
+MSG: Net dLTe_if assigned at cycle 6
+MSG: Component scheduled from cycle 6 to 7
+MSG: Net g assigned at cycle 7
+MSG: Component scheduled from cycle 7 to 8
+MSG: Net g assigned at cycle 8
+MSG: Component scheduled from cycle 6 to 7
+MSG: Net h assigned at cycle 7
+MSG: Component scheduled from cycle 7 to 8
+MSG: Net h assigned at cycle 8
+MSG: Component scheduled from cycle 8 to 9
+MSG: Net x assigned at cycle 9
+MSG: Component scheduled from cycle 8 to 9
+MSG: Net z assigned at cycle 9
+MSG: Component scheduled from cycle 2 to 3
+MSG: Net dLTe assigned at cycle 3
+MSG: Component scheduled from cycle 1 to 2
+MSG: Net e assigned at cycle 2
+MSG: Component scheduled from cycle 1 to 2
+MSG: Net f assigned at cycle 2
+MSG: Net b assigned at cycle 1
+MSG: Net c assigned at cycle 1
+MSG: Net one assigned at cycle 1
+MSG: Net z assigned at cycle 5
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 4 to 5
+MSG: Net h assigned at cycle 4
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 3 to 4
+MSG: Net dLTEe_if assigned at cycle 3
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 2 to 3
+MSG: Net dLTEe assigned at cycle 2
+MSG(Component_SchedulePathALAP): Component scheduled from cycle 1 to 2
+MSG: Net dEQe assigned at cycle 1
+Error(Component_SchedulePathALAP): Circuit cannot meet latency
+ERROR: Scheduling Failed
