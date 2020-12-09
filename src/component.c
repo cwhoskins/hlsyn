@@ -35,7 +35,7 @@ typedef struct struct_component {
 	port output_ports[8];
 	uint8_t num_inputs;
 	uint8_t num_outputs;
-
+	condition conditional;
 } component;
 
 component* Component_Create(component_type type) {
@@ -44,6 +44,8 @@ component* Component_Create(component_type type) {
 		new_component = (component*) malloc(sizeof(component));
 		if(NULL != new_component) {
 			if(component_unknown != type) {
+				new_component->conditional.type = transition_all;
+				new_component->conditional.net_condition = NULL;
 				new_component->type = type;
 				new_component->width = 0;
 				new_component->delay_ns = 0.0f;
@@ -77,28 +79,6 @@ component* Component_Create(component_type type) {
 		}
 	}
 	return new_component;
-}
-
-void Component_UpdatePathDelay(component* self, float path_delay_ns) {
-	uint8_t output_idx;
-	float new_delay_ns;
-	char log_msg[128];
-	if(NULL != self) {
-		Component_UpdateDelay(self);
-
-		if(load_register == self->type) {
-			new_delay_ns = self->delay_ns;
-		} else {
-			new_delay_ns = path_delay_ns + self->delay_ns;
-		}
-
-		sprintf(log_msg, "MSG: Updating downstream path delay to %.2f ns\n", new_delay_ns);
-		LogMessage(log_msg, MESSAGE_LEVEL);
-
-		for(output_idx = 0; output_idx < self->num_outputs; output_idx++) {
-			Net_UpdatePathDelay(self->output_ports[output_idx].port_net, new_delay_ns);
-		}
-	}
 }
 
 void Component_SchedulePathASAP(component* self, uint8_t cycle) {
@@ -151,7 +131,7 @@ void Component_SchedulePathFDS(component* self, uint8_t cycle) {
 	if(NULL != self) {
 		if(cycle > self->time_frame[1] || cycle < self->time_frame[0]) {
 			LogMessage("ERROR: Component scheduled outside of time frame\n", ERROR_LEVEL);
-		} else {
+		} else if(self->is_scheduled == FALSE || self->type == component_if_else) {
 			self->time_frame[0] = cycle;
 			self->time_frame[1] = cycle;
 			self->cycle_scheduled = cycle;
@@ -238,7 +218,7 @@ void Component_UpdateTimeFrameEnd(component* self, uint8_t cycle) {
 	uint8_t new_cycle = cycle - self->delay_cycle;
 	uint8_t idx;
 	if(NULL != self) {
-		if(FALSE == self->is_scheduled && new_cycle < self->time_frame[1]) {
+		if((FALSE == self->is_scheduled || component_if_else == self->type) && new_cycle < self->time_frame[1]) {
 			self->time_frame[1] = new_cycle;
 			for(idx = 0; idx < self->num_inputs; idx++) {
 				Net_UpdateTimeFrameEnd(self->input_ports[idx].port_net, new_cycle);
@@ -311,6 +291,15 @@ uint8_t Component_AddInputPort(component* self, net* input, port_type type) {
 						self->sign = net_signed;
 					}
 				}
+			} else if(port_if == type || port_else == type) {
+				component* cond_comp = Net_GetDriver(input);
+				port temp_port;
+				temp_port = Component_GetInputPort(cond_comp, 0);
+				self->conditional.net_condition = temp_port.port_net;
+				if(port_if == type)
+					self->conditional.type = transition_if;
+				else
+					self->conditional.type = transition_else;
 			}
 			if(Net_GetWidth(input) > self->width && comparator == self->type) {
 				self->width = Net_GetWidth(input);
@@ -381,78 +370,12 @@ uint8_t Component_GetNumOutputs(component* self) {
 	return ret_value;
 }
 
-
-void Component_UpdateDelay(component* self) {
-	uint8_t width_idx;
+condition Component_GetCondition(component* self) {
+	condition ret_value = {.net_condition = NULL, .type = transition_all};
 	if(NULL != self) {
-		char log_msg[64];
-		switch(self->width) {
-		case 1:
-			width_idx = 0;
-			break;
-		case 2:
-			width_idx = 1;
-			break;
-		case 8:
-			width_idx = 2;
-			break;
-		case 16:
-			width_idx = 3;
-			break;
-		case 32:
-			width_idx = 4;
-			break;
-		case 64:
-			width_idx = 5;
-			break;
-		default:
-			LogMessage("ERROR: Incorrect Component Width\r\n", ERROR_LEVEL);
-			return;
-			break;
-		}
-		switch(self->type) {
-		case load_register:
-			self->delay_ns = reg_delays[width_idx];
-			break;
-		case adder:
-			self->delay_ns = add_delays[width_idx];
-			break;
-		case subtractor:
-			self->delay_ns = sub_delays[width_idx];
-			break;
-		case multiplier:
-			self->delay_ns = mul_delays[width_idx];
-			break;
-		case divider:
-			self->delay_ns = div_delays[width_idx];
-			break;
-		case modulo:
-			self->delay_ns = mod_delays[width_idx];
-			break;
-		case mux2x1:
-			self->delay_ns = mux2x1_delays[width_idx];
-			break;
-		case comparator:
-			self->delay_ns = comp_delays[width_idx];
-			break;
-		case shift_right:
-			self->delay_ns = shr_delays[width_idx];
-			break;
-		case shift_left:
-			self->delay_ns = shl_delays[width_idx];
-			break;
-		case incrementer:
-			self->delay_ns = inc_delays[width_idx];
-			break;
-		case decrementer:
-			self->delay_ns = dec_delays[width_idx];
-			break;
-		default:
-			break;
-		}
-		sprintf(log_msg, "MSG: Component Delay set to %.2f ns\n", self->delay_ns);
-		LogMessage(log_msg, MESSAGE_LEVEL);
+		ret_value = self->conditional;
 	}
+	return ret_value;
 }
 
 component_type Component_GetType(component* self) {

@@ -22,9 +22,6 @@ void Net_SetUsage(net* self, uint8_t new_usage);
 uint8_t Net_GetUsage(net* self);
 component* Net_GetDriver(net* self);
 
-void Net_ResetDelay(net* self);
-void Net_UpdatePathDelay(net* self, float path_delay_ns);
-
 void Net_SchedulePathASAP(net* self, uint8_t cycle);
 uint8_t Net_SchedulePathALAP(net* self, uint8_t cycle);
 float Net_CalculateSuccessorForce(net* self, circuit* circ, uint8_t cycle);

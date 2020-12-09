@@ -495,14 +495,14 @@ void ConditionStack_Push(net* cond_net, transition_type type, circuit* circ) {
 		if(transition_if == type) {
 			conditional = Component_Create(component_if_else);
 			Circuit_AddComponent(circ, conditional);
-			Component_AddInputPort(conditional, cond_net, port_if);
+			Component_AddInputPort(conditional, cond_net, port_conditional);
 			Net_GetName(cond_net, net_name);
 			strcat(net_name, "_if");
 			new_net = Net_Create(net_name, net_conditional, net_unsigned, 1);
 			Component_AddOutputPort(conditional, new_net, port_if);
 			if(NULL != condition_stack) {
-				prev_cond = Component_GetOutputPort(condition_stack, (Component_GetNumOutputs(condition_stack)-1));
-				Component_AddInputPort(conditional, prev_cond.port_net, port_if);
+				port cur_condition = Component_GetOutputPort(condition_stack, (Component_GetNumOutputs(condition_stack)-1));
+				Component_AddInputPort(conditional, cur_condition.port_net, cur_condition.type);
 			}
 			condition_stack = conditional;
 		} else if(transition_else == type) {

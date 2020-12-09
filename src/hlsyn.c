@@ -22,6 +22,9 @@ int main(int argc, char *argv[]) {
 	char* c_file = NULL;
 	char* verilog_file = NULL;
 	char* latency_val = NULL;
+	char c_file[64];
+	char verilog_file[64];
+	int laten;
 
 #if DEBUG_MODE == 1
 
@@ -84,13 +87,17 @@ int main(int argc, char *argv[]) {
 	if(TRUE == test_if) {
 		uint8_t latency[num_if_cases] = {4, 4, 8, 4};
 		for(idx = 1; idx <= num_if_cases; idx++) {
-			netlist_circuit = Circuit_Create(latency[idx]);
-			sm = StateMachine_Create(latency[idx]);
+			netlist_circuit = Circuit_Create(latency[idx-1]);
+			sm = StateMachine_Create(latency[idx-1]);
 			sprintf(c_file, "./test/if/hls_test%d.c", idx);
 			sprintf(verilog_file, "./test/outputs/if%d.v", idx);
 			ClearConditionalStack();
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
-				Circuit_ScheduleForceDirected(netlist_circuit, sm);
+				if(FAILURE != Circuit_ScheduleForceDirected(netlist_circuit, sm)) {
+					StateMachine_Link(sm);
+				} else {
+					LogMessage("ERROR: Scheduling Failed\n", ERROR_LEVEL);
+				}
 
 			}
 			Circuit_Destroy(&netlist_circuit);
