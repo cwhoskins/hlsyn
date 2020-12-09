@@ -26,13 +26,13 @@ int main(int argc, char *argv[]) {
 #if DEBUG_MODE == 1
 
 
-	const uint8_t test_standard = FALSE;
+	const uint8_t test_standard = TRUE;
 #define num_standard_cases 7
-	const uint8_t test_latency = FALSE;
+	const uint8_t test_latency = TRUE;
 #define num_latency_cases 6
 	const uint8_t test_if = TRUE;
 #define num_if_cases 4
-	const uint8_t test_error = FALSE;
+	const uint8_t test_error = TRUE;
 #define num_error_cases 3
 
 	uint8_t idx;
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 	state_machine* sm;
 
 	SetLogFile("./test/output.txt");
-	SetLogLevel(MESSAGE_LEVEL);
+	SetLogLevel(CIRCUIT_ERROR_LEVEL);
 	LogMessage("hlsyn started\n\0", MESSAGE_LEVEL);
 
 
@@ -55,8 +55,12 @@ int main(int argc, char *argv[]) {
 			sprintf(verilog_file, "./test/outputs/standard%d.v", (idx+1));
 
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
-				Circuit_ScheduleForceDirected(netlist_circuit, sm);
-				PrintStateMachine(verilog_file, netlist_circuit, sm);
+				if(FAILURE != Circuit_ScheduleForceDirected(netlist_circuit, sm)) {
+					StateMachine_Link(sm);
+					PrintStateMachine(verilog_file, netlist_circuit, sm);
+				} else {
+					LogMessage("ERROR: Scheduling Failed\n", ERROR_LEVEL);
+				}
 			} else {
 				break;
 			}
@@ -74,7 +78,12 @@ int main(int argc, char *argv[]) {
 			sprintf(c_file, "./test/latency/hls_test%d.c", idx);
 			sprintf(verilog_file, "./test/outputs/latency%d.v", idx);
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
-				Circuit_ScheduleForceDirected(netlist_circuit, sm);
+				if(FAILURE != Circuit_ScheduleForceDirected(netlist_circuit, sm)) {
+					StateMachine_Link(sm);
+					PrintStateMachine(verilog_file, netlist_circuit, sm);
+				} else {
+					LogMessage("ERROR: Scheduling Failed\n", ERROR_LEVEL);
+				}
 			}
 			Circuit_Destroy(&netlist_circuit);
 			StateMachine_Destroy(&sm);
@@ -111,7 +120,12 @@ int main(int argc, char *argv[]) {
 			sprintf(c_file, "./test/error/hls_test%d.c", idx);
 			sprintf(verilog_file, "./test/outputs/error%d.v", idx);
 			if(FAILURE != ReadNetlist(c_file, netlist_circuit)) {
-				Circuit_ScheduleForceDirected(netlist_circuit, sm);
+				if(FAILURE != Circuit_ScheduleForceDirected(netlist_circuit, sm)) {
+					StateMachine_Link(sm);
+					PrintStateMachine(verilog_file, netlist_circuit, sm);
+				} else {
+					LogMessage("ERROR: Scheduling Failed\n", ERROR_LEVEL);
+				}
 			}
 			Circuit_Destroy(&netlist_circuit);
 			StateMachine_Destroy(&sm);

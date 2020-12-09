@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 void Print_StateList(state* cur_state, FILE* print_file, uint8_t latency);
 
@@ -106,14 +107,14 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm) {
 	fputs("\n", fp);
 
 	// List outputs
-	fputs("\toutput Done;\n", fp);
+	fputs("\toutput reg Done;\n", fp);
 	for(idx = 0; idx < num_nets; idx++) {
 		temp_net = Circuit_GetNet(circ, idx);
 		if(NULL == temp_net) {
 			LogMessage("Error: Could not retrieve net\n", ERROR_LEVEL);
 			break;
 		}
-		else if(net_output == Net_GetType(temp_net)) {
+		else if(net_output == Net_GetType(temp_net) && 1== Net_GetUsage(temp_net)) {
 			DeclareNet(temp_net, line_buffer);
 			print_return = fprintf(fp, line_buffer);
 			if(0 >= print_return) {
@@ -135,15 +136,20 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm) {
 			break;
 		}
 		else if(net_input != Net_GetType(temp_net) && net_output != Net_GetType(temp_net)) {
-			DeclareNet(temp_net, line_buffer);
-			print_return = fprintf(fp, line_buffer);
-			if(0 >= print_return) {
-				sprintf(log_msg, "Error: Could not print to file - %d\n", print_return);
-				LogMessage(log_msg, ERROR_LEVEL);
-				break;
+			if(1 == Net_GetUsage(temp_net)) {
+				DeclareNet(temp_net, line_buffer);
+				print_return = fprintf(fp, line_buffer);
+				if(0 >= print_return) {
+					sprintf(log_msg, "Error: Could not print to file - %d\n", print_return);
+					LogMessage(log_msg, ERROR_LEVEL);
+					break;
+				}
 			}
 		}
 	}
+	uint8_t num_states = StateMachine_GetNumStates(sm);
+	uint8_t state_width = (uint8_t) (1.0f + log2(num_states));
+	fprintf(fp, "\treg [%d:0] state;\n", (state_width-1));
 
 	fputs("\n", fp);
 
@@ -181,7 +187,7 @@ void DeclareNet(net* self, char* line_buffer) {
 		strcpy(net_type_keyword, "input");
 		break;
 	case net_output:
-		strcpy(net_type_keyword, "output");
+		strcpy(net_type_keyword, "output reg");
 		break;
 	case net_wire:
 		strcpy(net_type_keyword, "wire");
@@ -190,7 +196,7 @@ void DeclareNet(net* self, char* line_buffer) {
 		strcpy(net_type_keyword, "reg");
 		break;
 	case net_variable:
-		strcpy(net_type_keyword, "variable");
+		strcpy(net_type_keyword, "reg");
 		break;
 	default:
 		strcpy(net_type_keyword, "err");
