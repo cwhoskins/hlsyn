@@ -486,7 +486,7 @@ void Component_Destroy(component** self) {
 	}
 }
 
-char* Component_PrintOperation(component* op, int spot) {
+void Component_PrintOperation(component* op, int spot, char* equ) {
 	int idx = 0;
 	char o[] = "";
 	char a[] = "";
@@ -495,8 +495,7 @@ char* Component_PrintOperation(component* op, int spot) {
 	char sel[] = "";
 	char i0[] = "";
 	char i1[] = "";
-	int size = 64;
-	char* eqn = malloc(size);
+	char eqn[64];
 
 	switch(Component_GetType(op)) {
 	case adder:
@@ -513,6 +512,7 @@ char* Component_PrintOperation(component* op, int spot) {
 			}
 			idx++;
 		}
+		strcat(equ, eqn);
 		break;
 	case subtractor:
 		while(idx < Component_GetNumInputs(op)) {
@@ -646,6 +646,6 @@ char* Component_PrintOperation(component* op, int spot) {
 		break;
 	}
 
-	return eqn;
+	return;
 
 }

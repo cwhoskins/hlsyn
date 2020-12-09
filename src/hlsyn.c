@@ -22,7 +22,6 @@ int main(int argc, char *argv[]) {
 	char* c_file = NULL;
 	char* verilog_file = NULL;
 	char* latency_val = NULL;
-	int laten;
 
 #if DEBUG_MODE == 1
 
