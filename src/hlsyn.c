@@ -19,9 +19,9 @@
 
 int main(int argc, char *argv[]) {
 
-	char c_file[64];
-	char verilog_file[64];
-	int laten;
+	char* c_file = NULL;
+	char* verilog_file = NULL;
+	char* latency_val = NULL;
 
 #if DEBUG_MODE == 1
 
@@ -169,7 +169,8 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 	Circuit_ScheduleForceDirected(netlist_circuit, sm);
-	PrintStateMachine(verilog_file, netlist_circuit, sm, latency);
+	StateMachine_Link(sm);
+	PrintStateMachine(verilog_file, netlist_circuit, sm);
 
 
 	CloseLog();

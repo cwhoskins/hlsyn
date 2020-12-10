@@ -33,7 +33,6 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm) {
 	char line_buffer[512];
 	net* list_temp = NULL;
 	net* temp_net = NULL;
-	uint8_t latency = StateMachine_GetLatency(sm);
 
 
 	LogMessage("MSG: Writing Circuit to file\n", MESSAGE_LEVEL);
@@ -43,8 +42,6 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm) {
 		LogMessage("Error: Cannot open output file\n", ERROR_LEVEL);
 		return;
 	}
-
-	//fprintf(fp, "TODO: Implement file write\n");
 
 	// Create inputs list
 	for(idx = 0; idx < num_nets; idx++) {
@@ -76,12 +73,10 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm) {
 	}
 
 
-	fputs("'timescale 1ns/1ps\n", fp);
-	fputs("'default_nettype none\n", fp);
+	fputs("`timescale 1ns/1ps\n", fp);
 	fputs("\n", fp);
 	fprintf(fp, "module HLSM(Clk, Rst, Start, %sDone, %s);\n", in_list, out_list);
 	fputs("\n", fp);
-	fputs("\tlocalparam OUTPUT_WIDTH = 2*DATA_WIDTH;\n", fp);
 	fputs("\n", fp);
 
 	// List inputs
@@ -153,7 +148,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm) {
 
 	fputs("\n", fp);
 
-	fputs("\t always @(posedge clk) begin\n", fp);
+	fputs("\t always @(posedge Clk) begin\n", fp);
 	fputs("\t\t if(Rst) begin\n", fp);
 	fputs("\t\t\t state <= 0;\n", fp);
 	fputs("\t\t end else begin\n", fp);
@@ -169,7 +164,7 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm) {
 
 	fputs("\n", fp);
 
-	fputs("'default_nettype wire\n", fp);
+	fputs("`default_nettype wire\n", fp);
 
 	fclose(fp);
 }
@@ -473,11 +468,12 @@ void Print_StateList(state* cur_state, FILE* print_file, uint8_t latency) {
 		fprintf(print_file, "\t\t\t 4'd%d: begin\n", State_GetStateNumber(cur_state));
 
 		if(0 == cycle) {
-			fputs("\t\t\t\t done <= 0;\n", print_file);
+			fputs("\t\t\t\t Done <= 0;\n", print_file);
 			fputs("\t\t\t\t if(~Start) begin\n", print_file);
 			fputs("\t\t\t\t\t state <= 0;\n", print_file);
-			fputs("\t\t\t\t else\n", print_file);
+			fputs("\t\t\t\t end else begin\n", print_file);
 			fputs("\t\t\t\t\t state <= 1;\n", print_file);
+			fputs("\t\t\t\t end\n", print_file);
 			fputs("\t\t\t\t end\n", print_file);
 		} else if(cycle < (latency+1)) {
 			num_op = State_GetNumOperations(cur_state);
@@ -502,9 +498,10 @@ void Print_StateList(state* cur_state, FILE* print_file, uint8_t latency) {
 					next_state = State_GetNextState(cur_state, idx);
 					next_cycle = State_GetStateNumber(next_state);
 					if(0 == idx) {
-						fprintf(print_file, "\t\t\t\t if(%s) state <= %d;\n", conditional_net_name, next_cycle);
+						fprintf(print_file, "\t\t\t\t if(%s) begin \n\t\t\t\t\t state <= %d;\n", conditional_net_name, next_cycle);
 					} else {
-						fprintf(print_file, "\t\t\t\t else(%s) state <= %d;\n", conditional_net_name, next_cycle);
+						fprintf(print_file, "\t\t\t\t end else if(%s) begin \n\t\t\t\t\t state <= %d;\n", conditional_net_name, next_cycle);
+						fputs("\t\t\t\t end\n", print_file);
 					}
 				}
 			}
