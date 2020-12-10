@@ -143,7 +143,18 @@ void PrintStateMachine(char* file_name, circuit* circ, state_machine* sm) {
 		}
 	}
 	uint8_t num_states = StateMachine_GetNumStates(sm);
-	uint8_t state_width = (uint8_t) (1.0f + log2(num_states));
+	uint8_t state_width;
+	//CMake complains about log2
+	if(4 >= num_states) {
+		state_width = 2;
+	} else if(8 >= num_states) {
+		state_width = 3;
+	} else if(16 >= num_states) {
+		state_width = 4;
+	} else {
+		state_width = 5;
+	}
+	//uint8_t state_width = (uint8_t) (1.0f + log2f(num_states));
 	fprintf(fp, "\treg [%d:0] state;\n", (state_width-1));
 
 	fputs("\n", fp);

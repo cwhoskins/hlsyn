@@ -32,3 +32,4 @@ file( GLOB SRCS *.c *.h )
 # and header files needed for the executable.
 
 add_executable( hlsyn ${SRCS} )
+set_property(TARGET hlsyn PROPERTY C_STANDARD 11)

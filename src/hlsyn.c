@@ -139,7 +139,6 @@ int main(int argc, char *argv[]) {
 #else
 
 	int latency;
-	int val = -1;
 
 	if(argc < 4) {
 		printf("ERROR: Not enough arguments.\n");
@@ -162,19 +161,16 @@ int main(int argc, char *argv[]) {
 
 	circuit* netlist_circuit = Circuit_Create(latency);
 	state_machine* sm = StateMachine_Create(latency);
-	val = ReadNetlist(c_file, netlist_circuit);
 
-	if(FAILURE == val) {
-		Circuit_Destroy(netlist_circuit);
-		return EXIT_FAILURE;
+	if(SUCCESS == ReadNetlist(c_file, netlist_circuit)) {
+		if(SUCCESS == Circuit_ScheduleForceDirected(netlist_circuit, sm)) {
+			StateMachine_Link(sm);
+			PrintStateMachine(verilog_file, netlist_circuit, sm);
+		}
 	}
-	Circuit_ScheduleForceDirected(netlist_circuit, sm);
-	StateMachine_Link(sm);
-	PrintStateMachine(verilog_file, netlist_circuit, sm);
-
 
 	CloseLog();
-	Circuit_Destroy(netlist_circuit);
+	Circuit_Destroy(&netlist_circuit);
 
 	return EXIT_SUCCESS;
 
